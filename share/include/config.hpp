@@ -1,7 +1,8 @@
-#pragma once
+// This file is part of BackupSystem - a C++ project.
+// 
+// Licensed under the MIT License. See LICENSE file in the root directory for details.
 
-#define _SILENCE_CXX20_CISO646_REMOVED_WARNING
-// #include "ENVIRONMENT_CONSTENT.hpp"
+#pragma once
 
 #include <format>
 #include <fstream>
@@ -16,9 +17,6 @@
 #include <string>
 #include <vector>
 
-// #define BRIEF_FILE_INFO_TRUST
-#define default_convert_for_info_printed direct_convert
-
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -29,11 +27,9 @@ using std::vector;
 
 namespace fs = std::filesystem;
 namespace config {
-constexpr float VERSION = 3.2f;
+const string VERSION = "0.0.1";
 
-// constexpr int PRINT_ERROR_TO_LOG = 1;
-
-const fs::path PATH_MD5_DATA = format("./.md5_data_v{}", VERSION);
+// const fs::path PATH_MD5_DATA = format("./.md5_data_v{}", VERSION);
 const fs::path PATH_LOGS = "./logs.txt";
 const fs::path PATH_BACKUP_COPIES = "./backup_copies";
 const fs::path PATH_BACKUP_DATA = format("./backup_v{}", VERSION);
