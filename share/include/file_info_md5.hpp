@@ -9,6 +9,8 @@
 #include "file_info.hpp"
 
 namespace file_info {
+void init();
+void update_cached_md5();
 void calculate_md5_value(FileInfo &file);
 }
 #endif

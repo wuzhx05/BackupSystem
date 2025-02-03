@@ -19,7 +19,11 @@
 namespace file_info {
 constexpr int MD5_SIZE = 16;
 fs::path PATH_MD5_DATA;
+#ifdef BINARY_CACHED_MD5
 std::unordered_map<ull, std::array<unsigned char, MD5_SIZE>> cached_md5;
+#else
+std::unordered_map<ull, string> cached_md5;
+#endif
 std::mutex cached_md5_mutex;
 
 string hex_encode(const unsigned char digest[EVP_MAX_MD_SIZE],
@@ -32,6 +36,23 @@ string hex_encode(const unsigned char digest[EVP_MAX_MD_SIZE],
     }
     return ss.str();
 }
+
+#ifdef BINARY_CACHED_MD5
+std::vector<unsigned char> hexStringToBytes(const std::string &hex) {
+    std::vector<unsigned char> bytes;
+    for (size_t i = 0; i < hex.length(); i += 2) {
+        if (!isxdigit(hex[i]) || !isxdigit(hex[i + 1])) {
+            throw std::invalid_argument("Invalid hexadecimal string");
+        }
+        unsigned int byteValue;
+        std::stringstream ss;
+        ss << std::hex << hex.substr(i, 2);
+        ss >> byteValue;
+        bytes.push_back(static_cast<unsigned char>(byteValue));
+    }
+    return bytes;
+}
+#endif
 
 template <typename T> inline void hash_combine(size_t &seed, const T &value) {
     seed ^= std::hash<T>()(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -49,6 +70,7 @@ ull FileInfo_hash(const FileInfo &f) {
     return seed;
 }
 
+#ifdef BINARY_CACHED_MD5
 void init() {
     PATH_MD5_DATA = config::PATH_MD5_DATA / (env::UUID + ".bin");
     if (!fs::exists(config::PATH_MD5_DATA))
@@ -75,6 +97,29 @@ void update_cached_md5() {
         }
     }
 }
+#else
+void init() {
+    fs::path PATH_MD5_DATA = config::PATH_MD5_DATA / (env::UUID + ".txt");
+    if (!fs::exists(config::PATH_MD5_DATA))
+        fs::create_directories(config::PATH_MD5_DATA);
+    std::ifstream ifs(PATH_MD5_DATA);
+    if (ifs) {
+        ull hash;
+        string md5;
+        while (ifs >> hash >> md5) {
+            cached_md5[hash] = md5;
+        }
+    }
+}
+void update_cached_md5() {
+    std::ofstream ofs(PATH_MD5_DATA);
+    if (ofs) {
+        for (const auto &[hash, md5] : cached_md5) {
+            ofs << hash << " " << md5 << std::endl;
+        }
+    }
+}
+#endif
 
 void calculate_md5_value(FileInfo &file) {
     unsigned char digest[EVP_MAX_MD_SIZE]; // MD5 输出的缓冲区
@@ -97,18 +142,14 @@ void calculate_md5_value(FileInfo &file) {
         throw std::runtime_error("CalculateMD5: Failed to create MD5 context");
     }
 
-    auto ctx_deleter = [](EVP_MD_CTX *ctx) { EVP_MD_CTX_free(ctx); };
-    std::unique_ptr<EVP_MD_CTX, decltype(ctx_deleter)> ctx_guard(mdctx,
-                                                                 ctx_deleter);
-
     if (EVP_DigestInit_ex(mdctx, EVP_md5(), NULL) != 1) {
-        // EVP_MD_CTX_free(mdctx);
+        EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to initialize MD5");
     }
 
     std::ifstream fs(fs::path(file.path), std::ifstream::binary);
     if (!fs) {
-        // EVP_MD_CTX_free(mdctx);
+        EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to open file");
     }
 
@@ -122,11 +163,11 @@ void calculate_md5_value(FileInfo &file) {
     }
 
     if (EVP_DigestFinal_ex(mdctx, digest, &digestLength) != 1) {
-        // EVP_MD_CTX_free(mdctx);
+        EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to finalize MD5");
     }
 
-    // EVP_MD_CTX_free(mdctx);
+    EVP_MD_CTX_free(mdctx);
 
     // Convert digest to hex string
     assert(digestLength == MD5_SIZE);

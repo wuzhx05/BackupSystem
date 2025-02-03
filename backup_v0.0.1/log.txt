@@ -1,0 +1,5 @@
+[INFO] Project started.
+[INFO] Called time: 2025-02-03 22:51:41
+[INFO] UUID: NULL
+
+[INFO] Folder path: /mnt/e/Videoes

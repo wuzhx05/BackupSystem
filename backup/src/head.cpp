@@ -1,6 +1,7 @@
 // This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for
+// details.
 
 #include <exception>
 #include <filesystem>
@@ -54,11 +55,11 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
 
     // 定义命令行选项
     po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "Display this help message")(
-        "threads,j", po::value<int>()->default_value(1),
-        "Number of threads to use")("folders,f",
-                                    po::value<std::vector<std::string>>(),
-                                    "Folders to backup");
+    desc.add_options()
+    ("help,h", "Display this help message")
+    ("threads,j", po::value<int>()->default_value(1), "Number of threads to use")
+    ("folders,f", po::value<std::vector<std::string>>(), "Folders to backup")
+    ("check-cached-md5,c", "Use cached MD5 information for verification");
 
     // 解析命令行参数
     po::variables_map vm;
@@ -78,6 +79,9 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
                 folders.push_back(path);
             }
         }
+
+        if (vm.count("check-cached-md5"))
+            config::SHOULD_CHECK_CACHED_MD5 = true;
     } catch (const boost::program_options::required_option &e) {
         print::log(print::ERROR, "[ERROR] " + std::string(e.what()));
         return false;

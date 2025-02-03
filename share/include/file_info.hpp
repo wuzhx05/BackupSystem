@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <queue>
 #include <string>
+#include <functional>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

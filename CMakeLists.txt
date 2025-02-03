@@ -26,9 +26,11 @@ find_package(OpenSSL REQUIRED)
 
 # 设置库路径
 if(WIN32)
-    link_directories(${CMAKE_SOURCE_DIR}/lib_mingw)
+    link_directories(${CMAKE_SOURCE_DIR}/lib)
+    link_directories(${CMAKE_SOURCE_DIR}/lib/mingw)
 else()
     link_directories(${CMAKE_SOURCE_DIR}/lib)
+    link_directories(${CMAKE_SOURCE_DIR}/lib/linux_gnu)
 endif()
 
 # 包含目录

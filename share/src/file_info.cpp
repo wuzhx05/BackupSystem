@@ -1,6 +1,7 @@
 // This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for
+// details.
 
 #include <cassert>
 #include <chrono>
@@ -33,20 +34,20 @@ void to_json(json &j, const FileInfo &f) {
              {"md5", f.md5_value}};
 }
 
-FileInfo::FileInfo(const std::u8string &path) : path(path) {
-    assert(std::filesystem::exists(path));
+FileInfo::FileInfo(const std::u8string &path)
+    : path(path), modified_time(0), file_size(0), md5_value("") {
+    if (!std::filesystem::exists(path)) {
+        print::log(print::ERROR, "[ERROR] FileInfo: File does not exist");
+        return;
+        // throw std::runtime_error(
+        //     "FileInfo: File does not exist"); // to-do: 异常处理，鲁棒性？
+    }
 
     std::error_code ec;
     auto _modified_time =
         std::filesystem::last_write_time(path, ec); // 获取最后修改时间
     if (!ec) {
         modified_time = file_time_type2time_t(_modified_time);
-        // auto systemTimePoint =
-        //     std::chrono::clock_cast<std::chrono::system_clock>(_modified_time);
-        // auto time = std::chrono::system_clock::to_time_t(systemTimePoint);
-        // std::stringstream ss;
-        // ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
-        // modified_time = ss.str();
     } else {
         std::cerr << "[ERROR] FileInfo: Failed to retrieve modification time: "
                   << ec.message() << std::endl;

@@ -15,6 +15,7 @@ std::string UUID;
 void init() {
     CALLED_TIME = getCurrentTime("%Y_%m_%d_%H_%M_%S");
     UUID = "NULL";
+    config::PATH_LOGS = config::PATH_BACKUP_DATA / CALLED_TIME / "log.txt";
 }
 
 std::string getCurrentTime(const char* format) {

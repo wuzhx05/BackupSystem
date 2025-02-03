@@ -14,7 +14,7 @@
 #include "print.hpp"
 #include "str_encode.hpp"
 
-int THREAD_NUM;
+using config::THREAD_NUM;
 const string PROJECT_NAME = "backup";
 
 vector<u8string> backup_folder_paths;
@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
     str_encode::init();
     if (!create_backup_folder(ofs_directories, ofs_file_info))
         return 1;
+    file_info::init();
     if (!log(print::WHITE,
              std::format("[INFO] Project started.\n"
                          "[INFO] Called time: {}\n"
@@ -72,5 +73,8 @@ int main(int argc, char *argv[]) {
 
     // check
     check(file_infos);
+
+    //
+    file_info::update_cached_md5();
     return 0;
 }
