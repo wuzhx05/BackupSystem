@@ -1,37 +1,32 @@
-# This file is part of BackupSystem - a C++ project.
-# 
-# Licensed under the MIT License. See LICENSE file in the root directory for details.
-
-cmake_minimum_required(VERSION 3.10)
+# test/CMakeLists.txt
 project(BackupSystemTests)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# 启用测试
+enable_testing()
 
-# 查找依赖
+# 查找 GTest
 find_package(GTest REQUIRED)
-find_package(OpenSSL REQUIRED)
 
-include_directories(${CMAKE_SOURCE_DIR}/../share/include)
+# 定义测试可执行文件路径（根据构建模式）
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(TEST_EXECUTABLE ${CMAKE_BINARY_DIR}/bin/debug/test_file_info_md5)
+else()
+    set(TEST_EXECUTABLE ${CMAKE_BINARY_DIR}/bin/test_file_info_md5)
+endif()
 
 # 添加测试可执行文件
-add_executable(file_info_md5_tests 
-    test_file_info_md5.cpp
-    ${CMAKE_SOURCE_DIR}/../share/src/file_info_md5.cpp
-    ${CMAKE_SOURCE_DIR}/../share/src/file_info.cpp
-    ${CMAKE_SOURCE_DIR}/../share/src/config.cpp
-    ${CMAKE_SOURCE_DIR}/../share/src/print.cpp
+add_executable(test_file_info_md5 test_file_info_md5.cpp)
+
+# 链接依赖库
+target_link_libraries(test_file_info_md5 PRIVATE
+    CoreLib
+    GTest::GTest
+    GTest::Main
 )
 
-# 链接库
-target_link_libraries(file_info_md5_tests PRIVATE
-    GTest::GTest GTest::Main
-    OpenSSL::SSL OpenSSL::Crypto
-)
-
-# 添加测试
-enable_testing()
-add_test(NAME file_info_md5_tests 
-    COMMAND file_info_md5_tests
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+# 注册测试用例
+add_test(
+    NAME FileInfoMD5Test
+    COMMAND ${TEST_EXECUTABLE}
+    # WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )

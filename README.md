@@ -58,8 +58,8 @@ share:
 ## 待办事项
 
 - [x] MD5`BUFFERSIZE`放到`config.hpp`
-- [ ] `log`单独路径
-- [x] 根据历史信息得出MD5，跳过计算；编写测试代码。
+- [x] `log`单独路径
+- [x] 根据历史信息得出MD5(Cache)，跳过计算；编写测试代码。
 - [ ] `file_info`使用`fs::path`。
 - [ ] 编写restore
 - [ ] 编写clean
