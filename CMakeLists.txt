@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(BackupSystem)
+enable_testing()  
 
 # 设置默认构建类型：Release
 if(NOT CMAKE_BUILD_TYPE)  
@@ -53,9 +54,7 @@ target_link_libraries(CoreLib PRIVATE
 # 添加子项目
 add_subdirectory(backup)
 add_subdirectory(restore)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_subdirectory(test)
-endif()
+add_subdirectory(test)
 
 # 安装规则
 install(TARGETS backup restore DESTINATION bin)

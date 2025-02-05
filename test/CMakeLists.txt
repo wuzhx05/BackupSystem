@@ -27,6 +27,5 @@ target_link_libraries(test_file_info_md5 PRIVATE
 # 注册测试用例
 add_test(
     NAME FileInfoMD5Test
-    COMMAND ${TEST_EXECUTABLE}
-    # WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND $<TARGET_FILE:test_file_info_md5>
 )
