@@ -57,22 +57,29 @@ share:
 
 ## 待办事项
 
-- [x] MD5`BUFFERSIZE`放到`config.hpp`
-- [x] `log`单独路径
-- [x] 根据历史信息得出MD5(Cache)，跳过计算；编写测试代码。
-- [ ] `file_info`使用`fs::path`。
-- [ ] 编写restore
+- [x] `file_info`使用`fs::path`。
+- [x] 优化编码检测
+- [x] `fs::canonical` for backup
+- [x] 编写restore
+- [ ] 编写注释
 - [ ] 编写clean
+- [ ] 更优的字符串相似度匹配
+- [ ] 统一代码风格：命名方式
+- [ ] 发布到github
 - [x] 定义版本号
 - [x] 拷贝文件前检查时间戳
 - [x] 日志文件
 - [x] 字符串编码
+- [x] MD5`BUFFERSIZE`放到`config.hpp`
+- [x] `log`单独路径
+- [x] 根据历史信息得出MD5(Cache)，跳过计算；编写测试代码。
 
 ### 长远
 
 - [ ] 服务器端口传输
 - [ ] 缓存文件完整性和被篡改检查
 - [ ] UUID生成
+- [ ] 文件属性：隐藏等
 
 ## 项目部署
 

@@ -12,10 +12,17 @@ namespace env {
 std::string CALLED_TIME;
 std::string UUID;
 
-void init() {
+static void init() {
     CALLED_TIME = getCurrentTime("%Y_%m_%d_%H_%M_%S");
     UUID = "NULL";
+}
+void backup_init() {
+    init();
     config::PATH_LOGS = config::PATH_BACKUP_DATA / CALLED_TIME / "log.txt";
+}
+void restore_init(fs::path output_folder) {
+    init();
+    config::PATH_LOGS = output_folder / (CALLED_TIME + "_restore_log.txt");
 }
 
 std::string getCurrentTime(const char* format) {

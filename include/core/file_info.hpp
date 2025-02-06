@@ -43,15 +43,15 @@ class FileInfo {
     /**
      * @brief: 初始化path, modified_time, file_size
      */
-    FileInfo(const u8string &path);
+    FileInfo(const fs::path &path);
 
-    const u8string &get_path() const { return path; }
+    const fs::path &get_path() const { return path; }
     const time_t &get_modified_time() const { return modified_time; }
     const ull &get_file_size() const { return file_size; }
     const string &get_md5_value() const { return md5_value; }
 
   private:
-    u8string path;
+    fs::path path;
     time_t modified_time;
     ull file_size;
 

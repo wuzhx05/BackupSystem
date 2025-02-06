@@ -8,6 +8,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
+#include <unordered_set>
 
 #include <boost/program_options.hpp>
 
@@ -55,11 +56,12 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
 
     // 定义命令行选项
     po::options_description desc("Allowed options");
-    desc.add_options()
-    ("help,h", "Display this help message")
-    ("threads,j", po::value<int>()->default_value(1), "Number of threads to use")
-    ("folders,f", po::value<std::vector<std::string>>(), "Folders to backup")
-    ("check-cached-md5,c", "Use cached MD5 information for verification");
+    desc.add_options()("help,h", "Display this help message")(
+        "threads,j", po::value<int>()->default_value(1),
+        "Number of threads to use")("folders,f",
+                                    po::value<std::vector<std::string>>(),
+                                    "Folders to backup")(
+        "check-cached-md5,c", "Use cached MD5 information for verification");
 
     // 解析命令行参数
     po::variables_map vm;
@@ -115,21 +117,21 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
                                   vector<u8string> &directories,
                                   vector<u8string> &files) {
     print::cprintln(print::INFO, "Searching directories and files...");
-    std::set<std::u8string> d, f;
+    std::unordered_set<fs::path> d, f;
 
     // BFS
     std::queue<fs::path> q;
-    for (const auto &path : backup_folder_paths) {
+    for (auto path : backup_folder_paths) {
         if (!fs::exists(path)) {
             print::log(print::WARN,
                        format("[WARN] doesn't exist: {}",
                               str_encode::to_console_format(path)));
         } else {
-            std::u8string abs_path = fs::absolute(fs::path(path)).u8string();
+            fs::path abs_path = fs::canonical(path);
             if (!d.contains(abs_path)) {
-                print::log(print::IMPORTANT,
-                           "[INFO] Folder path: " +
-                               str_encode::to_console_format(abs_path));
+                print::log(print::IMPORTANT, "[INFO] Folder path: " +
+                                                 str_encode::to_console_format(
+                                                     abs_path.u8string()));
                 d.insert(abs_path);
                 q.push(abs_path);
             }
@@ -165,9 +167,9 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
     directories.reserve(d.size());
     files.reserve(f.size());
     for (const auto &path : d)
-        directories.emplace_back(path);
+        directories.emplace_back(path.u8string());
     for (const auto &path : f)
-        files.emplace_back(path);
+        files.emplace_back(path.u8string());
     print::cprintln(
         print::SUCCESS,
         format("  Found {} directories and {} files", d.size(), f.size()));

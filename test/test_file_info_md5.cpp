@@ -1,6 +1,4 @@
-// This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
+// Written by deepseek-R1
 
 #include <cstdlib>
 #include <filesystem>
@@ -39,7 +37,7 @@ class FileInfoMD5Test : public ::testing::Test {
 
 class MD5ComprehensiveTest : public ::testing::Test {
   protected:
-    std::vector<std::string> test_files;
+    std::vector<fs::path> test_files;
 
     // 生成随机内容文件
     void GenerateRandomFile(const fs::path &filename, size_t size) {
@@ -60,10 +58,7 @@ class MD5ComprehensiveTest : public ::testing::Test {
 
         filename = "\"" + filename + "\"";
 
-#if defined(_WIN32)
-#error "Windows 平台未实现"
-        cmd = "certutil -hashfile " + filename + " MD5"; // Windows 命令
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
         cmd = "md5 -q " + filename; // macOS 命令
 #else
         cmd = "md5sum " + filename + " | awk '{print $1}'"; // Linux 命令
@@ -173,16 +168,16 @@ TEST_F(MD5ComprehensiveTest, BoundarySizes) {
     };
 
     for (size_t size : sizes) {
-        std::string filename = "test_file_" + std::to_string(size) + ".bin";
+        fs::path filename = "test_file_" + std::to_string(size) + ".bin";
         GenerateRandomFile(filename, size);
 
         // 计算系统 MD5
-        std::string system_md5 = GetSystemMD5(filename);
+        std::string system_md5 = GetSystemMD5(filename.string());
         ASSERT_FALSE(system_md5.empty())
             << "Failed to get system MD5 for " << filename;
 
         // 计算自定义 MD5
-        file_info::FileInfo file{fs::path(filename).u8string()};
+        file_info::FileInfo file(filename);
         file_info::calculate_md5_value(file);
         std::string custom_md5 = file.get_md5_value();
 

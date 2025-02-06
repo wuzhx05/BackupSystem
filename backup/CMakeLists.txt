@@ -14,7 +14,6 @@ add_executable(backup ${BACKUP_SOURCES})
 # 链接依赖库
 target_link_libraries(backup PRIVATE
     CoreLib
-    ced # 平台特定库
 )
 
 # 构建模式配置

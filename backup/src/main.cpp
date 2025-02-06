@@ -1,6 +1,7 @@
 // This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for
+// details.
 
 #include <filesystem>
 #include <fstream>
@@ -29,11 +30,13 @@ using namespace print;
 
 int main(int argc, char *argv[]) {
     // initialize
-    env::init();
+    env::backup_init();
     str_encode::init();
     if (!create_backup_folder(ofs_directories, ofs_file_info))
         return 1;
     file_info::init();
+    cprintln(IMPORTANT,
+             "[INFO] Encoding: " + str_encode::get_console_encoding());
     if (!log(print::WHITE,
              std::format("[INFO] Project started.\n"
                          "[INFO] Called time: {}\n"
@@ -45,11 +48,6 @@ int main(int argc, char *argv[]) {
     vector<string> _backup_folder_paths;
     if (!parseCommandLineArgs(argc, argv, THREAD_NUM, _backup_folder_paths))
         return 1;
-    cprintln(print::IMPORTANT,
-             "[INFO] Encoding: " +
-                 str_encode::update_console_encoding(_backup_folder_paths));
-
-    // search directories and files & confirm backup folder paths
     for (const auto &path : _backup_folder_paths) {
         backup_folder_paths.emplace_back(str_encode::to_u8string(path));
     }
@@ -67,6 +65,7 @@ int main(int argc, char *argv[]) {
 
     // write to json
     write_to_json(ofs_file_info, ofs_directories, directories, file_infos);
+    ofs_file_info.close(), ofs_directories.close();
 
     // copy files
     copy_files(copier);
@@ -76,5 +75,17 @@ int main(int argc, char *argv[]) {
 
     //
     file_info::update_cached_md5();
+
+    // rename beta
+    CLOSE_LOG();
+    if (backup_folder_paths.size() <= 5) {
+        u8string suf;
+        for (const auto &path : backup_folder_paths) {
+            suf += u8"_" + fs::path(path).filename().u8string();
+        }
+        fs::rename(config::PATH_BACKUP_DATA / env::CALLED_TIME,
+                   config::PATH_BACKUP_DATA /
+                       (str_encode::to_u8string(env::CALLED_TIME) + suf));
+    }
     return 0;
 }

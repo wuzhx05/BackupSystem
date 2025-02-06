@@ -1,6 +1,7 @@
 // This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for
+// details.
 
 #include <fstream>
 
@@ -24,6 +25,10 @@ bool log(const char *const col, const std::string &s, bool print_to_console) {
     static std::ofstream ofs(config::PATH_LOGS, std::ios::app);
     if (!ofs) {
         return false;
+    }
+    if (s == "__CLOSE__" && print_to_console == false) {
+        ofs.close();
+        return true;
     }
     if (print_to_console)
         cprintln(col, s);

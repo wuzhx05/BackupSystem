@@ -44,7 +44,7 @@ const int JSON_DUMP_INDENT_CHAR = ' ';
 
 typedef unsigned long long ull;
 
-extern std::set<u8string> IGNORED_PATH;
+extern std::set<fs::path> IGNORED_PATH;
 
 // the following are defined by command line arguments
 extern int THREAD_NUM;

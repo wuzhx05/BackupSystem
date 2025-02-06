@@ -50,14 +50,6 @@ ThreadPool::~ThreadPool() {
     }
 }
 
-// void ThreadPool::enqueue(auto f) {
-//     {
-//         std::unique_lock<std::mutex> lock(queueMutex);
-//         tasks.emplace(f);
-//     }
-//     condition.notify_one();
-// }
-
 FilesCopier::FilesCopier(const bool &overwrite_existing)
     : total_size(0), finished_size(0), total_num(0), finished_num(0),
       stop(false), if_show_progress_bar(false),
@@ -91,7 +83,7 @@ FilesCopier::~FilesCopier() {
 
     worker->join();
 }
-void FilesCopier::enqueue(u8string from, u8string to, ull file_size) {
+void FilesCopier::enqueue(fs::path from, fs::path to, ull file_size) {
     {
         std::unique_lock<std::mutex> lock(queueMutex);
         tasks.emplace(from, to, file_size);
@@ -114,8 +106,8 @@ void FilesCopier::copy_func(const Task &task) {
     } catch (const std::exception &e) {
         print::log(print::ERROR,
                         std::format("[ERROR] FilesCopier: {} to {}, : {}.",
-                                    str_encode::to_console_format(task.from),
-                                    str_encode::to_console_format(task.to),
+                                    str_encode::to_console_format(task.from.u8string()),
+                                    str_encode::to_console_format(task.to.u8string()),
                                     e.what()));
     }
 }

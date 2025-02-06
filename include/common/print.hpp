@@ -13,6 +13,8 @@
 
 #include "config.hpp"
 
+#define CLOSE_LOG() print::log(print::RESET, "__CLOSE__", false)
+
 /**
  * @brief 与打印相关的函数
  * @warning 实现中使用了mutex同步打印，尽量通过此文件中的函数打印

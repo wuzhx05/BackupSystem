@@ -8,6 +8,7 @@
 
 #include <condition_variable>
 #include <functional>
+#include <filesystem>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -15,6 +16,7 @@
 #include <vector>
 
 using std::u8string;
+namespace fs = std::filesystem;
 typedef unsigned long long ull;
 
 class ThreadPool {
@@ -22,7 +24,6 @@ class ThreadPool {
     ThreadPool(const int THREAD_NUM);
     ~ThreadPool();
 
-    // template <class F> void enqueue(F f);
     void enqueue(auto f) {
         {
             std::unique_lock<std::mutex> lock(queueMutex);
@@ -43,14 +44,14 @@ class FilesCopier {
   public:
     FilesCopier(const bool &overwrite_existing);
     ~FilesCopier();
-    void enqueue(u8string from, u8string to, ull file_size);
+    void enqueue(fs::path from, fs::path to, ull file_size);
     void show_progress_bar();
 
   private:
     struct Task {
-        u8string from, to;
+        fs::path from, to;
         ull file_size;
-        Task(const u8string &from, const u8string &to, const ull &file_size)
+        Task(const fs::path &from, const fs::path &to, const ull &file_size)
             : from(from), to(to), file_size(file_size) {}
     };
     std::queue<Task> tasks;

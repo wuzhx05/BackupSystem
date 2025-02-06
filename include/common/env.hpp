@@ -7,12 +7,15 @@
 #define ENV
 
 #include <string>
+#include <filesystem>
 
 namespace env {
 extern std::string CALLED_TIME;
 extern std::string UUID;
+namespace fs = std::filesystem;
 
-void init();
+void backup_init();
+void restore_init(fs::path output_folder);
 std::string getCurrentTime(const char* format);
 
 }
