@@ -18,6 +18,7 @@
 
 using nlohmann::json;
 
+/// 尝试创建目录。如果目录不存在且无法创建，则返回false并记录错误信息。
 static bool _try_create_directory(fs::path name) {
     try {
         if (!std::filesystem::exists(name) ||
@@ -47,9 +48,7 @@ bool create_backup_folder(std::ofstream &ofs_directories,
     }
     return true;
 }
-/**
- * @brief 解析命令行参数
- */
+
 bool parseCommandLineArgs(int argc, char *argv[], int &threads,
                           std::vector<std::string> &folders) {
     namespace po = boost::program_options;
@@ -125,12 +124,12 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
         if (!fs::exists(path)) {
             print::log(print::WARN,
                        format("[WARN] doesn't exist: {}",
-                              str_encode::to_console_format(path)));
+                              strencode::to_console_format(path)));
         } else {
             fs::path abs_path = fs::canonical(path);
             if (!d.contains(abs_path)) {
                 print::log(print::IMPORTANT, "[INFO] Folder path: " +
-                                                 str_encode::to_console_format(
+                                                 strencode::to_console_format(
                                                      abs_path.u8string()));
                 d.insert(abs_path);
                 q.push(abs_path);
@@ -147,7 +146,7 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
                 if (config::IGNORED_PATH.contains(
                         entry.path().filename().u8string())) {
                     print::log(print::RESET, "[INFO] skipped: " +
-                                                 str_encode::to_console_format(
+                                                 strencode::to_console_format(
                                                      entry.path().u8string()));
                     continue;
                 }
@@ -176,7 +175,7 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
 }
 
 void get_file_infos(const vector<u8string> &files,
-                    vector<file_info::FileInfo> &file_infos) {
+                    vector<fileinfo::FileInfo> &file_infos) {
     print::cprintln(print::INFO, "Getting file infos...");
     file_infos.clear();
     file_infos.reserve(files.size());
@@ -187,7 +186,7 @@ void get_file_infos(const vector<u8string> &files,
 }
 
 void calculate_md5_values(ThreadPool *&pool, FilesCopier *&copier,
-                          vector<file_info::FileInfo> &file_infos,
+                          vector<fileinfo::FileInfo> &file_infos,
                           const int THREAD_NUM) {
     using namespace print;
     cprintln(INFO, "Calculating md5 values...");
@@ -233,7 +232,7 @@ void calculate_md5_values(ThreadPool *&pool, FilesCopier *&copier,
 
 void write_to_json(std::ofstream &ofs_file_info, std::ofstream &ofs_directories,
                    const vector<u8string> &directories,
-                   const vector<file_info::FileInfo> &file_infos) {
+                   const vector<fileinfo::FileInfo> &file_infos) {
     print::cprintln(print::INFO, "Writing to json...");
     ofs_directories << json(directories)
                            .dump(config::JSON_DUMP_INDENT,
@@ -252,7 +251,7 @@ void copy_files(FilesCopier *&copier) {
     print::cprintln(print::SUCCESS, "\n  Copying files done.");
 }
 
-void check(vector<file_info::FileInfo> &file_infos) {
+void check(vector<fileinfo::FileInfo> &file_infos) {
     using namespace fs;
     print::cprintln(print::INFO, "Checking...");
     for (auto &file_info : file_infos) {
@@ -263,7 +262,7 @@ void check(vector<file_info::FileInfo> &file_infos) {
             (!exists(origin_path) << 4) | (!exists(backup_path) << 3) |
             ((file_size(origin_path) != file_size(backup_path)) << 2) |
             ((file_size(origin_path) != file_info.get_file_size()) << 1) |
-            (file_info::file_time_type2time_t(last_write_time(origin_path)) !=
+            (fileinfo::file_time_type2time_t(last_write_time(origin_path)) !=
              file_info.get_modified_time());
         if (ec) {
             print::log(
@@ -271,7 +270,7 @@ void check(vector<file_info::FileInfo> &file_infos) {
                 std::format(
                     "[ERROR] Check: File {} is different from backup, error "
                     "code: {}",
-                    str_encode::to_console_format(origin_path.u8string()), ec));
+                    strencode::to_console_format(origin_path.u8string()), ec));
             if (fs::exists(backup_path))
                 fs::remove(backup_path);
         }

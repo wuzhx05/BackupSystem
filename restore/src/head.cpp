@@ -57,7 +57,15 @@ bool parseCommandLineArgs(int argc, char *argv[], std::string &inputFolder,
     return true;
 }
 
-int choose_an_option(int l, int r) {
+/// @brief 提示用户在指定范围内选择一个选项。
+/// 
+/// 该函数会不断从标准输入读取输入，直到提供一个有效的整数（在该范围 [l, r] 内）。它处理无效的输入，通过打印错误信息并再次输入。
+///
+/// @param l 范围的下限（包含）。
+/// @param r 范围的上限（包含）。
+/// 
+/// @return 用户选择的一个整数值，该值在指定的范围内。
+static int choose_an_option(int l, int r) {
     int choice;
     string input;
     while (std::getline(std::cin, input)) {
@@ -83,7 +91,7 @@ bool selectBackupFolder(fs::path &input_folder, fs::path &output_folder) {
                 auto u8_input_folder = input_folder.u8string();
                 auto u8_candidate = entry.path().filename().u8string();
                 candidates.push_back(
-                    {str_similarity::levenshteinFullMatrix(
+                    {strsimilarity::levenshteinFullMatrix(
                          string(u8_input_folder.begin(), u8_input_folder.end()),
                          string(u8_candidate.begin(), u8_candidate.end())),
                      entry.path()});
@@ -103,7 +111,7 @@ bool selectBackupFolder(fs::path &input_folder, fs::path &output_folder) {
         print::cprintln(print::IMPORTANT, "Please input the backup path: ");
         for (size_t i = 0; i < std::min((size_t)5, candidates.size()); i++) {
             auto &[s, p] = candidates[i];
-            auto str = str_encode::to_console_format(p.u8string());
+            auto str = strencode::to_console_format(p.u8string());
             print::println(
                 format("  [{}] {} {}", i + 1, colored_percentage(s), str));
         }
@@ -116,7 +124,7 @@ bool selectBackupFolder(fs::path &input_folder, fs::path &output_folder) {
             print::cprintln(print::IMPORTANT, "Please input the backup path: ");
             for (size_t i = 0; i < candidates.size(); i++) {
                 auto &[s, p] = candidates[i];
-                auto str = str_encode::to_console_format(p.u8string());
+                auto str = strencode::to_console_format(p.u8string());
                 print::println(
                     format("  [{:>{}}] {} {}", i + 1,
                            (int)std::log10((double)candidates.size()) + 1,
@@ -226,10 +234,10 @@ bool copy_files(const fs::path &input_folder, const fs::path &output_folder,
         return false;
     }
     // parse
-    vector<file_info::FileInfo> file_info;
+    vector<fileinfo::FileInfo> file_info;
     nlohmann::json j;
     ifs_file_info >> j;
-    file_info = j.get<vector<file_info::FileInfo>>();
+    file_info = j.get<vector<fileinfo::FileInfo>>();
     ifs_file_info.close();
     // copy
     auto copier = new FilesCopier(overwrite_existing_files);

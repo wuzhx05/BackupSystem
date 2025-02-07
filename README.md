@@ -57,14 +57,12 @@ share:
 
 ## 待办事项
 
-- [x] `file_info`使用`fs::path`。
-- [x] 优化编码检测
-- [x] `fs::canonical` for backup
-- [x] 编写restore
-- [ ] 编写注释
+- [x] 编写注释
 - [ ] 编写clean
 - [ ] 更优的字符串相似度匹配
 - [ ] 统一代码风格：命名方式
+- [ ] 更完善的线程池
+- [ ] copyright 信息？
 - [ ] 发布到github
 - [x] 定义版本号
 - [x] 拷贝文件前检查时间戳
@@ -73,9 +71,14 @@ share:
 - [x] MD5`BUFFERSIZE`放到`config.hpp`
 - [x] `log`单独路径
 - [x] 根据历史信息得出MD5(Cache)，跳过计算；编写测试代码。
+- [x] `file_info`使用`fs::path`。
+- [x] 优化编码检测
+- [x] `fs::canonical` for backup
+- [x] 编写restore
 
 ### 长远
 
+- [ ] 对于文件大小部分，更丝滑的进度更新
 - [ ] 服务器端口传输
 - [ ] 缓存文件完整性和被篡改检查
 - [ ] UUID生成

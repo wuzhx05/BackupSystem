@@ -16,12 +16,16 @@
 
 #include "file_info_md5.hpp"
 
-namespace file_info {
+namespace fileinfo {
 constexpr int MD5_SIZE = 16;
 fs::path PATH_MD5_DATA;
 std::unordered_map<ull, std::array<unsigned char, MD5_SIZE>> cached_md5;
 std::mutex cached_md5_mutex;
 
+/// @brief Converts a binary digest to a hexadecimal string.
+/// @param[in] digest The binary digest array.
+/// @param[in] len The length of the digest.
+/// @return A hexadecimal encoded string representation of the digest.
 string hex_encode(const unsigned char digest[EVP_MAX_MD_SIZE],
                   unsigned int len) {
     std::stringstream ss;
@@ -33,14 +37,19 @@ string hex_encode(const unsigned char digest[EVP_MAX_MD_SIZE],
     return ss.str();
 }
 
+/// @brief Combines a value into the hash seed.
+/// @details This function is used to combine different parts of an object's data (e.g., path, modified time, size) 
+/// into a single hash value for use in unordered_map hashing.
+/// @param[in,out] seed The seed value that will be combined with the hash of the given value.
+/// @param[in] value The value to be combined into the hash seed.
 template <typename T> inline void hash_combine(size_t &seed, const T &value) {
     seed ^= std::hash<T>()(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
-/**
- * @brief FileInfo的哈希函数
- * @details 用于unordered_map的哈希函数，根据FileInfo的path、modified_time、size
- * 计算哈希值
- */
+
+/// @brief Hashing function for FileInfo objects.
+/// @details This function is used as a hasher in unordered_map for FileInfo objects based on their path, modified time, and size.
+/// @param[in] f The FileInfo object to be hashed.
+/// @return A hash value calculated from the file's path, modified time, and size(not related to file content).
 ull FileInfo_hash(const FileInfo &f) {
     size_t seed = 0;
     hash_combine(seed, f.get_path());
@@ -102,13 +111,11 @@ void calculate_md5_value(FileInfo &file) {
                                                                  ctx_deleter);
 
     if (EVP_DigestInit_ex(mdctx, EVP_md5(), NULL) != 1) {
-        // EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to initialize MD5");
     }
 
     std::ifstream fs(fs::path(file.path), std::ifstream::binary);
     if (!fs) {
-        // EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to open file");
     }
 
@@ -122,11 +129,8 @@ void calculate_md5_value(FileInfo &file) {
     }
 
     if (EVP_DigestFinal_ex(mdctx, digest, &digestLength) != 1) {
-        // EVP_MD_CTX_free(mdctx);
         throw std::runtime_error("CalculateMD5: Failed to finalize MD5");
     }
-
-    // EVP_MD_CTX_free(mdctx);
 
     // Convert digest to hex string
     assert(digestLength == MD5_SIZE);
@@ -146,4 +150,4 @@ void calculate_md5_value(FileInfo &file) {
     cached_md5[hash] = std::array<unsigned char, MD5_SIZE>();
     std::copy(digest, digest + MD5_SIZE, cached_md5[hash].begin());
 }
-} // namespace file_info
+} // namespace fileinfo

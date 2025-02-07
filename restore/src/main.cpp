@@ -19,14 +19,14 @@ int main(int argc, char *argv[]) {
         if (!parseCommandLineArgs(argc, argv, str_input_folder,
                                   str_output_folder, overwrite_existing_files))
             return 1;
-        input_folder = fs::path(str_encode::to_u8string(str_input_folder));
-        output_folder = fs::path(str_encode::to_u8string(str_output_folder));
+        input_folder = fs::path(strencode::to_u8string(str_input_folder));
+        output_folder = fs::path(strencode::to_u8string(str_output_folder));
     }
 
     // initialize
-    str_encode::init();
+    strencode::init();
     print::cprintln(print::IMPORTANT,
-                    "[INFO] Encoding: " + str_encode::get_console_encoding());
+                    "[INFO] Encoding: " + strencode::get_console_encoding());
     if (!fs::exists(output_folder)) {
         fs::create_directories(output_folder);
     }
@@ -48,11 +48,11 @@ int main(int argc, char *argv[]) {
     for (auto &p : backuped_paths) {
         print::log(print::RESET, "[INFO] Backuped path: ");
         print::log(print::IMPORTANT,
-                   "    " + str_encode::to_console_format(p.u8string()));
+                   "    " + strencode::to_console_format(p.u8string()));
         print::log(print::RESET, "  Restore to: ");
         print::log(print::IMPORTANT,
                    "    " +
-                       str_encode::to_console_format(
+                       strencode::to_console_format(
                            fs::path(output_folder / p.filename()).u8string()));
     }
     print::cprintln(print::INFO,

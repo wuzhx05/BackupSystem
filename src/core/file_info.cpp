@@ -13,7 +13,7 @@
 #include "nlohmann/json.hpp"
 #include "print.hpp"
 
-namespace file_info {
+namespace fileinfo {
 time_t file_time_type2time_t(fs::file_time_type ftime) {
     auto systemTimePoint =
         std::chrono::clock_cast<std::chrono::system_clock>(ftime);
@@ -57,4 +57,4 @@ FileInfo::FileInfo(const fs::path &path)
     file_size = std::filesystem::file_size(path);
 }
 
-} // namespace file_info
+} // namespace fileinfo

@@ -102,12 +102,11 @@ void FilesCopier::copy_func(const Task &task) {
             print::progress_bar::print_double_progress_bar(
                 static_cast<double>(finished_num) / total_num,
                 static_cast<double>(finished_size) / total_size);
-        // if (if_print_rate) print_rate();
     } catch (const std::exception &e) {
         print::log(print::ERROR,
                         std::format("[ERROR] FilesCopier: {} to {}, : {}.",
-                                    str_encode::to_console_format(task.from.u8string()),
-                                    str_encode::to_console_format(task.to.u8string()),
+                                    strencode::to_console_format(task.from.u8string()),
+                                    strencode::to_console_format(task.to.u8string()),
                                     e.what()));
     }
 }

@@ -21,7 +21,7 @@ const string PROJECT_NAME = "backup";
 vector<u8string> backup_folder_paths;
 vector<u8string> directories;
 vector<u8string> files;
-vector<file_info::FileInfo> file_infos;
+vector<fileinfo::FileInfo> file_infos;
 
 std::ofstream ofs_file_info;
 std::ofstream ofs_directories;
@@ -31,12 +31,12 @@ using namespace print;
 int main(int argc, char *argv[]) {
     // initialize
     env::backup_init();
-    str_encode::init();
+    strencode::init();
     if (!create_backup_folder(ofs_directories, ofs_file_info))
         return 1;
-    file_info::init();
+    fileinfo::init();
     cprintln(IMPORTANT,
-             "[INFO] Encoding: " + str_encode::get_console_encoding());
+             "[INFO] Encoding: " + strencode::get_console_encoding());
     if (!log(print::WHITE,
              std::format("[INFO] Project started.\n"
                          "[INFO] Called time: {}\n"
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     if (!parseCommandLineArgs(argc, argv, THREAD_NUM, _backup_folder_paths))
         return 1;
     for (const auto &path : _backup_folder_paths) {
-        backup_folder_paths.emplace_back(str_encode::to_u8string(path));
+        backup_folder_paths.emplace_back(strencode::to_u8string(path));
     }
     cprintln(IMPORTANT, format("[INFO] Thread number: {}", THREAD_NUM));
     search_directories_and_files(backup_folder_paths, directories, files);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     check(file_infos);
 
     //
-    file_info::update_cached_md5();
+    fileinfo::update_cached_md5();
 
     // rename beta
     CLOSE_LOG();
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
         }
         fs::rename(config::PATH_BACKUP_DATA / env::CALLED_TIME,
                    config::PATH_BACKUP_DATA /
-                       (str_encode::to_u8string(env::CALLED_TIME) + suf));
+                       (strencode::to_u8string(env::CALLED_TIME) + suf));
     }
     return 0;
 }

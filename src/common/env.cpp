@@ -12,6 +12,8 @@ namespace env {
 std::string CALLED_TIME;
 std::string UUID;
 
+/// @brief 初始化全局变量 `CALLED_TIME` 和 `UUID`。
+/// @details 这个函数将 `CALLED_TIME` 设置为当前时间的格式化字符串 "YYYY_MM_DD_HH_MM_SS"，并将 `UUID` 设置为 "NULL"。
 static void init() {
     CALLED_TIME = getCurrentTime("%Y_%m_%d_%H_%M_%S");
     UUID = "NULL";

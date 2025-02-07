@@ -17,8 +17,13 @@
 
 #include "str_encode.hpp"
 
-namespace str_encode {
-string console_encoding; // initialize to UTF-8
+namespace strencode {
+/// @var console_encoding
+/// 初始化为UTF-8，在`init()`中通过`detectConsoleEncoding()`调整，表示控制台的当前编码。
+string console_encoding;
+
+/// @var DEFAULT_LANG
+/// 默认语言设置为中文。
 Language DEFAULT_LANG = Language::CHINESE;
 
 void init() {
@@ -112,4 +117,4 @@ u8string to_u8string(const string &str) {
     return u8string(u8s.begin(), u8s.end());
 }
 
-} // namespace str_encode
+} // namespace strencode

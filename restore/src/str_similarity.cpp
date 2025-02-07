@@ -1,10 +1,16 @@
+/// @file str_similarity.cpp
+/// @brief Contains implementations of string similarity algorithms including Levenshtein distance and Jaro-Winkler distance.
+
+// source: https://www.geeksforgeeks.org/jaro-and-jaro-winkler-similarity/
+// source: https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/
+
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
 #include "str_similarity.hpp"
 
-namespace str_similarity {
+namespace strsimilarity {
 using std::floor;
 using std::max;
 using std::min;
@@ -101,4 +107,4 @@ double jaro_distance(string s1, string s2) {
             ((double)match - t) / ((double)match)) /
            3.0;
 }
-} // namespace str_similarity
+} // namespace strsimilarity

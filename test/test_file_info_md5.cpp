@@ -61,7 +61,7 @@ class MD5ComprehensiveTest : public ::testing::Test {
 #if defined(__APPLE__)
         cmd = "md5 -q " + filename; // macOS 命令
 #else
-        cmd = "md5sum " + filename + " | awk '{print $1}'"; // Linux 命令
+        cmd = "md5sum " + filename + " | awk '{print $1}'"; // Linux / Windows 命令
 #endif
 
         // 执行命令并捕获输出
@@ -91,18 +91,18 @@ class MD5ComprehensiveTest : public ::testing::Test {
 
 // 测试空文件 MD5
 TEST_F(FileInfoMD5Test, EmptyFile) {
-    file_info::FileInfo file(u8"test_files/empty.txt");
-    file_info::calculate_md5_value(file);
+    fileinfo::FileInfo file(u8"test_files/empty.txt");
+    fileinfo::calculate_md5_value(file);
     EXPECT_EQ(file.get_md5_value(), "D41D8CD98F00B204E9800998ECF8427E");
 }
 
 // 测试文件内容变化检测
 TEST_F(FileInfoMD5Test, ContentChangeDetection) {
-    file_info::FileInfo file1(u8"test_files/test1.bin");
-    file_info::FileInfo file2(u8"test_files/test2.bin");
+    fileinfo::FileInfo file1(u8"test_files/test1.bin");
+    fileinfo::FileInfo file2(u8"test_files/test2.bin");
 
-    file_info::calculate_md5_value(file1);
-    file_info::calculate_md5_value(file2);
+    fileinfo::calculate_md5_value(file1);
+    fileinfo::calculate_md5_value(file2);
 
     EXPECT_NE(file1.get_md5_value(), file2.get_md5_value());
 }
@@ -111,10 +111,10 @@ TEST_F(FileInfoMD5Test, ContentChangeDetection) {
 TEST_F(FileInfoMD5Test, CacheFunctionality) {
     config::SHOULD_CHECK_CACHED_MD5 = true;
 
-    file_info::FileInfo file(u8"test_files/test1.bin");
-    file_info::FileInfo file2(u8"test_files/test1.bin");
-    file_info::calculate_md5_value(file);  // 首次计算
-    file_info::calculate_md5_value(file2); // 第二次应从缓存读取
+    fileinfo::FileInfo file(u8"test_files/test1.bin");
+    fileinfo::FileInfo file2(u8"test_files/test1.bin");
+    fileinfo::calculate_md5_value(file);  // 首次计算
+    fileinfo::calculate_md5_value(file2); // 第二次应从缓存读取
 
     EXPECT_EQ(file.get_md5_value(), file2.get_md5_value());
 }
@@ -128,9 +128,9 @@ TEST_F(FileInfoMD5Test, ThreadSafety) {
 
     for (int i = 0; i < THREAD_NUM; ++i) {
         threads.emplace_back([]() {
-            file_info::FileInfo file(u8"test_files/test1.bin");
+            fileinfo::FileInfo file(u8"test_files/test1.bin");
             for (int j = 0; j < 100; ++j) {
-                file_info::calculate_md5_value(file);
+                fileinfo::calculate_md5_value(file);
             }
         });
     }
@@ -145,8 +145,8 @@ TEST_F(FileInfoMD5Test, ThreadSafety) {
 
 // 测试异常处理
 TEST_F(FileInfoMD5Test, InvalidFileHandling) {
-    file_info::FileInfo file(u8"non_existent_file.txt");
-    EXPECT_THROW(file_info::calculate_md5_value(file), std::runtime_error);
+    fileinfo::FileInfo file(u8"non_existent_file.txt");
+    EXPECT_THROW(fileinfo::calculate_md5_value(file), std::runtime_error);
 }
 
 // <--------------MD5ComprehensiveTest-------------->
@@ -177,8 +177,8 @@ TEST_F(MD5ComprehensiveTest, BoundarySizes) {
             << "Failed to get system MD5 for " << filename;
 
         // 计算自定义 MD5
-        file_info::FileInfo file(filename);
-        file_info::calculate_md5_value(file);
+        fileinfo::FileInfo file(filename);
+        fileinfo::calculate_md5_value(file);
         std::string custom_md5 = file.get_md5_value();
 
         // 转换为大写比较（系统工具输出为小写）
@@ -203,8 +203,8 @@ TEST_F(MD5ComprehensiveTest, SmallSizes) {
         std::string system_md5 = GetSystemMD5(filename);
         ASSERT_FALSE(system_md5.empty()) << "Test " << size << " failed";
 
-        file_info::FileInfo file{fs::path(filename).u8string()};
-        file_info::calculate_md5_value(file);
+        fileinfo::FileInfo file{fs::path(filename).u8string()};
+        fileinfo::calculate_md5_value(file);
         std::string custom_md5 = file.get_md5_value();
         std::transform(custom_md5.begin(), custom_md5.end(), custom_md5.begin(),
                        ::toupper);
@@ -228,8 +228,8 @@ TEST_F(MD5ComprehensiveTest, RandomSizes) {
         std::string system_md5 = GetSystemMD5(filename);
         ASSERT_FALSE(system_md5.empty()) << "Test " << i << " failed";
 
-        file_info::FileInfo file{fs::path(filename).u8string()};
-        file_info::calculate_md5_value(file);
+        fileinfo::FileInfo file{fs::path(filename).u8string()};
+        fileinfo::calculate_md5_value(file);
         std::string custom_md5 = file.get_md5_value();
         std::transform(custom_md5.begin(), custom_md5.end(), custom_md5.begin(),
                        ::toupper);
@@ -253,8 +253,8 @@ TEST_F(MD5ComprehensiveTest, SpecialFilenames) {
         std::string system_md5 = GetSystemMD5(name);
         ASSERT_FALSE(system_md5.empty()) << "Failed for filename: " << name;
 
-        file_info::FileInfo file{fs::path(name).u8string()};
-        file_info::calculate_md5_value(file);
+        fileinfo::FileInfo file{fs::path(name).u8string()};
+        fileinfo::calculate_md5_value(file);
         std::string custom_md5 = file.get_md5_value();
         std::transform(custom_md5.begin(), custom_md5.end(), custom_md5.begin(),
                        ::toupper);
