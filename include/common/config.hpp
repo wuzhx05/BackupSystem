@@ -48,7 +48,7 @@ typedef unsigned long long ull;
 const string VERSION = "0.0.1";
 
 /// MD5缓存目录的路径，基于当前版本。
-const fs::path PATH_MD5_DATA = format("./.md5_cache_v{}", VERSION);
+const fs::path PATH_MD5_CACHE = format("./.md5_cache_v{}", VERSION);
 
 /// 备份副本目录的路径。
 const fs::path PATH_BACKUP_COPIES = "./backup_copies";
@@ -77,23 +77,23 @@ extern bool SHOULD_CHECK_CACHED_MD5;
 } // namespace config
 
 namespace print::progress_bar {
-/// 用于表示进度的字符。
-const char PROGRESS_CHAR = '#';
+/// 表示进度条已填充部分的字符。
+const char PROGRESS_FILL_CHAR = '#';
 
-/// 进度条剩余部分的填充字符。
-const char BAR_CHAR = '-';
+/// 表示进度条剩余部分的填充字符。
+const char PROGRESS_EMPTY_CHAR = '-';
 
 /// 进度条的总长度。
 const int BLOCK_NUM = 50;
 
 /// 二重进度条第一部分的颜色。
-const char *const PROGRESS_COLOR1 = "\033[38;2;200;100;100m";
+const char *const DOUBLE_PROGRESS_COLOR1 = "\033[38;2;200;100;100m";
 
 /// 二重进度条第二部分的颜色。
-const char *const PROGRESS_COLOR2 = "\033[38;2;100;100;200m";
+const char *const DOUBLE_PROGRESS_COLOR2 = "\033[38;2;100;100;200m";
 
 /// 二重进度条混合部分的颜色。
-const char *const PROGRESS_MIXED_COLOR = "\033[38;2;150;75;150m";
+const char *const DOUBLE_PROGRESS_MIXED_COLOR = "\033[38;2;150;75;150m";
 } // namespace print::progress_bar
 
 namespace fileinfo {

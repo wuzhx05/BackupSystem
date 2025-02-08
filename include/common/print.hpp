@@ -1,5 +1,5 @@
 /// @file print.hpp
-/// @brief 与打印相关的函数和类定义
+/// @brief 与打印相关的函数和类声明
 /// @details
 /// 提供了一系列用于控制台输出的函数和类，包括标准输出、错误输出、日志记录以及进度条显示等功能。
 /// @warning 实现中使用了mutex同步打印，尽量通过此文件中的函数打印。
@@ -48,12 +48,11 @@ const char *const SUCCESS = GREEN;
 
 extern std::mutex io_lock;
 
-/// @brief 标准输出打印函数，带换行
+/// @brief 终端输出打印函数，带换行
 /// @param s 要打印的字符串
-/// @param os 输出的流对象，默认为std::cout
-void println(const std::string &s, std::ostream &os = std::cout);
+void println(const std::string &s);
 
-/// @brief 错误输出打印函数，带颜色
+/// @brief 终端打印函数，带颜色，带换行
 /// @param col ANSI颜色转义码
 /// @param s 要打印的字符串
 void cprintln(const char *const col, const std::string &s);
@@ -113,7 +112,7 @@ class ProgressBar {
     /// @param to_show 是否初始显示，默认为false
     ProgressBar(ull total, bool to_show = false)
         : total(total), current(0), to_show(to_show), ratio(0),
-          doubleProgressBar(nullptr) {}
+        double_progress_bar(nullptr) {}
 
     /// @brief 更新进度条，视情况刷新进度条
     /// @param progress 当前进度值
@@ -141,7 +140,7 @@ class ProgressBar {
     ull current;                          /// 当前进度值
     bool to_show;                         /// 是否显示进度条
     double ratio;                         /// 进度比例
-    DoubleProgressBar *doubleProgressBar; /// 双进度条对象指针
+    DoubleProgressBar *double_progress_bar; /// 双进度条对象指针
 };
 } // namespace progress_bar
 } // namespace print

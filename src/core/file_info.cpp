@@ -1,3 +1,6 @@
+/// @file file_info.cpp
+/// @brief file_info.hpp的实现。
+//
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
@@ -41,7 +44,7 @@ FileInfo::FileInfo(const fs::path &path)
         print::log(print::ERROR, "[ERROR] FileInfo: File does not exist");
         return;
         // throw std::runtime_error(
-        //     "FileInfo: File does not exist"); // to-do: 异常处理，鲁棒性？
+        //     "FileInfo: File does not exist"); // TODO: 异常处理，鲁棒性？
     }
 
     std::error_code ec;

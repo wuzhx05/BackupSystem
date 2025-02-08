@@ -1,3 +1,6 @@
+/// @file backup/src/main.hpp
+/// @brief backup的主函数
+//
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
@@ -8,12 +11,12 @@
 #include <iostream>
 #include <mutex>
 
-#include "ThreadPool.hpp"
 #include "env.hpp"
 #include "file_info.hpp"
 #include "head.hpp"
 #include "print.hpp"
 #include "str_encode.hpp"
+#include "thread_pool.hpp"
 
 using config::THREAD_NUM;
 const string PROJECT_NAME = "backup";
@@ -23,49 +26,52 @@ vector<u8string> directories;
 vector<u8string> files;
 vector<fileinfo::FileInfo> file_infos;
 
-std::ofstream ofs_file_info;
-std::ofstream ofs_directories;
+std::ofstream file_info_output_stream;
+std::ofstream directories_output_stream;
 
 using namespace print;
 
 int main(int argc, char *argv[]) {
-    // initialize
-    env::backup_init();
-    strencode::init();
-    if (!create_backup_folder(ofs_directories, ofs_file_info))
-        return 1;
-    fileinfo::init();
-    cprintln(IMPORTANT,
-             "[INFO] Encoding: " + strencode::get_console_encoding());
-    if (!log(print::WHITE,
-             std::format("[INFO] Project started.\n"
-                         "[INFO] Called time: {}\n"
-                         "[INFO] UUID: {}\n",
-                         env::getCurrentTime("%Y-%m-%d %H:%M:%S"), env::UUID)))
-        return 1;
-
     // parse command line arguments
     vector<string> _backup_folder_paths;
-    if (!parseCommandLineArgs(argc, argv, THREAD_NUM, _backup_folder_paths))
+    if (!parse_command_line_args(argc, argv, THREAD_NUM, _backup_folder_paths))
         return 1;
     for (const auto &path : _backup_folder_paths) {
         backup_folder_paths.emplace_back(strencode::to_u8string(path));
     }
+
+    // initialize
+    env::backup_init();
+    strencode::init();
+    if (!create_backup_folder(directories_output_stream,
+                              file_info_output_stream))
+        return 1;
+    fileinfo::init();
+    if (!log(print::WHITE,
+             std::format("[INFO] Project started.\n"
+                         "[INFO] Called time: {}\n"
+                         "[INFO] UUID: {}\n",
+                         env::get_current_time("%Y-%m-%d %H:%M:%S"),
+                         env::UUID)))
+        return 1;
+    cprintln(IMPORTANT,
+             "[INFO] Encoding: " + strencode::get_console_encoding());
     cprintln(IMPORTANT, format("[INFO] Thread number: {}", THREAD_NUM));
-    search_directories_and_files(backup_folder_paths, directories, files);
-    print::pause();
 
     // get file infos
+    search_directories_and_files(backup_folder_paths, directories, files);
+    print::pause();
     get_file_infos(files, file_infos);
 
     // calculate md5
     ThreadPool *pool = nullptr;
     FilesCopier *copier = nullptr;
-    calculate_md5_values(pool, copier, file_infos, THREAD_NUM);
+    calculate_md5_values(pool, copier, file_infos);
 
     // write to json
-    write_to_json(ofs_file_info, ofs_directories, directories, file_infos);
-    ofs_file_info.close(), ofs_directories.close();
+    write_to_json(file_info_output_stream, directories_output_stream,
+                  directories, file_infos);
+    file_info_output_stream.close(), directories_output_stream.close();
 
     // copy files
     copy_files(copier);

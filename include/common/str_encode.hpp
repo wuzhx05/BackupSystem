@@ -1,4 +1,4 @@
-/// @file include/common/str_encode.hpp
+/// @file str_encode.hpp
 /// @brief 字符串编码处理模块。
 /// 该文件包含用于检测和转换字符串编码的函数实现。
 /// 支持Windows和非Windows系统的编码检测和转换。
@@ -28,7 +28,7 @@ void init();
 
 /// @brief 检测控制台的编码格式。
 /// @return 返回检测到的编码格式字符串。
-std::string detectConsoleEncoding();
+std::string detect_console_encoding();
 
 /// @brief 获取当前控制台的编码格式。
 /// @return 返回当前控制台的编码格式字符串。

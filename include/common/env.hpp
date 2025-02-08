@@ -1,5 +1,5 @@
 /// @file include/common/env.hpp
-/// @brief 这个文件包含BackupSystem项目的与环境相关的函数实现。
+/// @brief 提供获取当前时间的函数，负责CALLED_TIME和UUID的初始化，并基于此初始化PATH_LOGS
 
 // This file is part of BackupSystem - a C++ project.
 //
@@ -36,7 +36,7 @@ void restore_init(fs::path output_folder);
 /// @return 包含格式化日期和时间的 std::string。
 /// @details
 /// 这个函数获取当前系统时间，将其转换为本地时间表示形式，格式化为`format`指定形式，并返回格式化的字符串。
-std::string getCurrentTime(const char *format);
+std::string get_current_time(const char *format);
 
 } // namespace env
 #endif

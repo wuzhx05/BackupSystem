@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(BackupSystem)
-enable_testing()  
+enable_testing()
 
 # 设置默认构建类型：Release
-if(NOT CMAKE_BUILD_TYPE)  
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Default to Release build" FORCE)  
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Default to Release build" FORCE)
 endif() 
 
 # 基本配置
@@ -14,8 +14,8 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 # 输出路径设置
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)  
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)  
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 

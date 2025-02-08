@@ -1,6 +1,6 @@
-/// @file ThreadPool.hpp
+/// @file thread_pool.hpp
 /// @brief
-/// 头文件，定义ThreadPool和FilesCopier类的接口及其依赖关系，用于管理线程和文件复制任务。
+/// 头文件，声明ThreadPool和FilesCopier类的接口及其依赖关系，用于管理线程和文件复制任务。
 
 // This file is part of BackupSystem - a C++ project.
 //
@@ -38,7 +38,7 @@ class ThreadPool {
     /// @param f 要作为任务执行的函数。
     void enqueue(auto f) {
         {
-            std::unique_lock<std::mutex> lock(queueMutex);
+            std::unique_lock<std::mutex> lock(queue_mutex);
             tasks.emplace(f);
         }
         condition.notify_one();
@@ -47,7 +47,7 @@ class ThreadPool {
   private:
     std::vector<std::thread> workers;        /// 工作线程集合
     std::queue<std::function<void()>> tasks; /// 任务队列，供程池处理的任务。
-    std::mutex queueMutex;             /// 用于同步对任务队列的访问的互斥锁。
+    std::mutex queue_mutex;             /// 用于同步对任务队列的访问的互斥锁。
     std::condition_variable condition; /// 通知工作线程有新任务可用。
     bool stop;                         /// 指示线程池是否应停止处理新任务。
 };
@@ -80,7 +80,7 @@ class FilesCopier {
             : from(from), to(to), file_size(file_size) {}
     };
     std::queue<Task> tasks; /// 任务队列。
-    std::mutex queueMutex;  /// 用于同步对任务队列的访问的互斥锁。
+    std::mutex queue_mutex;  /// 用于同步对任务队列的访问的互斥锁。
     std::condition_variable
         condition;             /// 条件变量，用于通知工作线程有新任务可用。
     bool stop;                 /// FilesCopier是否应停止处理新任务。

@@ -1,4 +1,6 @@
-// Written by deepseek-R1
+/// @file test_file_info_md5.cpp
+/// @brief 测试 FileInfo 类的 MD5 值计算与缓存
+/// @author deepseek-R1
 
 #include <cstdlib>
 #include <filesystem>

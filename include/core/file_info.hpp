@@ -1,5 +1,5 @@
 /// @file file_info.hpp
-/// @brief 该文件定义了用于处理文件信息的类和函数。
+/// @brief 该文件声明了用于处理文件信息的类和函数。
 /// 
 /// 这个模块包含以下主要功能：
 /// - 描述文件信息，包括文件名及路径、修改时间、文件大小和 MD5 校验值。
@@ -9,7 +9,7 @@
 /// - env.hpp: 环境变量处理的功能。
 /// - print.hpp: 打印调试信息的功能。
 /// - nlohmann/json.hpp: JSON 处理的功能。
-
+//
 // This file is part of BackupSystem - a C++ project.
 // 
 // Licensed under the MIT License. See LICENSE file in the root directory for details.

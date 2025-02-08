@@ -1,3 +1,6 @@
+/// @file str_encode.cpp
+/// @brief str_encode.hpp的实现文件
+//
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
@@ -19,21 +22,21 @@
 
 namespace strencode {
 /// @var console_encoding
-/// 初始化为UTF-8，在`init()`中通过`detectConsoleEncoding()`调整，表示控制台的当前编码。
+/// 初始化为UTF-8，在`init()`中通过`detect_console_encoding()`调整，表示控制台的当前编码。
 string console_encoding;
 
-/// @var DEFAULT_LANG
-/// 默认语言设置为中文。
-Language DEFAULT_LANG = Language::CHINESE;
+/// @var DETECT_HINT_LANG
+/// 编码检测的语言提示。
+Language DETECT_HINT_LANG = Language::CHINESE;
 
 void init() {
     console_encoding = "UTF-8";
-    auto dect = detectConsoleEncoding();
+    auto dect = detect_console_encoding();
     if (dect != "unkown")
         console_encoding = dect;
 }
 string get_console_encoding() { return console_encoding; }
-std::string detectConsoleEncoding() {
+std::string detect_console_encoding() {
 #ifdef _WIN32
     // Windows 系统使用代码页检测
     UINT codePage = GetConsoleOutputCP();
@@ -67,9 +70,9 @@ std::string detectConsoleEncoding() {
         if (dotPos != std::string::npos) {
             std::string encoding = slang.substr(dotPos + 1);
             // 清除后续修饰符（如@euro）
-            size_t modifierPos = encoding.find('@');
-            if (modifierPos != std::string::npos) {
-                encoding = encoding.substr(0, modifierPos);
+            size_t modifier_pos = encoding.find('@');
+            if (modifier_pos != std::string::npos) {
+                encoding = encoding.substr(0, modifier_pos);
             }
             return encoding;
         }
@@ -77,9 +80,9 @@ std::string detectConsoleEncoding() {
 
     throw std::runtime_error("Unable to detect console encoding");
     // 下下策：使用当前C++环境的locale检测
-    std::locale currentLocale("");
+    std::locale current_locale("");
     int encValue =
-        std::use_facet<std::codecvt<wchar_t, char, mbstate_t>>(currentLocale)
+        std::use_facet<std::codecvt<wchar_t, char, mbstate_t>>(current_locale)
             .encoding();
     return std::to_string(encValue);
 #endif
@@ -90,7 +93,7 @@ string detect_encoding(const string &str) {
     int bytes_consumed;
     Encoding encoding = CompactEncDet::DetectEncoding(
         str.c_str(), str.size(), nullptr, nullptr, nullptr, UNKNOWN_ENCODING,
-        DEFAULT_LANG, CompactEncDet::WEB_CORPUS, false, &bytes_consumed,
+        DETECT_HINT_LANG, CompactEncDet::WEB_CORPUS, false, &bytes_consumed,
         &is_reliable);
 
     string res = "UTF-8";

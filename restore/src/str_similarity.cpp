@@ -1,6 +1,7 @@
 /// @file str_similarity.cpp
-/// @brief Contains implementations of string similarity algorithms including Levenshtein distance and Jaro-Winkler distance.
-
+/// @brief 字符串相似度计算算法的实现， 包含 Levenshtein distance 和 Jaro-Winkler distance.
+/// @author geeksforgeeks
+//
 // source: https://www.geeksforgeeks.org/jaro-and-jaro-winkler-similarity/
 // source: https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/
 

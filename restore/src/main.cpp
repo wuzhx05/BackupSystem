@@ -1,50 +1,55 @@
+/// @file restore/src/main.cpp
+/// @brief 主函数，实现了restore过程的具体逻辑。
+///
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
 // details.
 
-#define RESTORE
-
 #include "head.hpp"
 
 fs::path input_folder;
-fs::path output_folder;
-vector<fs::path> backuped_paths;
+fs::path target_folder;
+std::vector<fs::path> backuped_paths;
 bool overwrite_existing_files = false;
 
 int main(int argc, char *argv[]) {
-    // parse command line arguments
+    // 解析命令行参数
     {
-        std::string str_input_folder, str_output_folder;
-        if (!parseCommandLineArgs(argc, argv, str_input_folder,
-                                  str_output_folder, overwrite_existing_files))
+        std::string str_input_folder, str_target_folder;
+        if (!parse_command_line_args(argc, argv, str_input_folder,
+                                  str_target_folder, overwrite_existing_files))
             return 1;
         input_folder = fs::path(strencode::to_u8string(str_input_folder));
-        output_folder = fs::path(strencode::to_u8string(str_output_folder));
+        target_folder = fs::path(strencode::to_u8string(str_target_folder));
     }
 
-    // initialize
+    // 初始化
+    if (!fs::exists(config::PATH_BACKUP_DATA)) {
+        print::cprintln(print::ERROR, "[ERROR] Path not exist: " + config::PATH_BACKUP_DATA.string());
+        return 1;
+    }
     strencode::init();
     print::cprintln(print::IMPORTANT,
                     "[INFO] Encoding: " + strencode::get_console_encoding());
-    if (!fs::exists(output_folder)) {
-        fs::create_directories(output_folder);
+    if (!fs::exists(target_folder)) {
+        fs::create_directories(target_folder);
     }
-    env::restore_init(output_folder);
+    env::restore_init(target_folder);
     if (!print::log(print::RESET, "[INFO] Restore started.")) {
         print::cprintln(print::ERROR, "[ERROR] Failed to open the log file.");
         return 1;
     }
 
-    // select a backup
-    if (!selectBackupFolder(input_folder, output_folder))
+    // 选择备份
+    if (!select_backup_folder(input_folder, target_folder))
         return 1;
 
-    // parse backup log
-    if (!parseBackupLog(input_folder, backuped_paths))
+    // 解析备份日志
+    if (!parse_backup_log(input_folder, backuped_paths))
         return 1;
 
-    // confirm
+    // 确认备份路径
     for (auto &p : backuped_paths) {
         print::log(print::RESET, "[INFO] Backuped path: ");
         print::log(print::IMPORTANT,
@@ -53,7 +58,7 @@ int main(int argc, char *argv[]) {
         print::log(print::IMPORTANT,
                    "    " +
                        strencode::to_console_format(
-                           fs::path(output_folder / p.filename()).u8string()));
+                           fs::path(target_folder / p.filename()).u8string()));
     }
     print::cprintln(print::INFO,
                     format("[INFO] Overwrite existing files: {}{}",
@@ -64,12 +69,14 @@ int main(int argc, char *argv[]) {
         false);
     print::pause();
 
-    // create directories
-    if (!create_directories(input_folder, output_folder, backuped_paths))
+    // 创建目录
+    if (!create_directories(input_folder, target_folder, backuped_paths))
         return 1;
-    
-    // copy files
-    if (!copy_files(input_folder, output_folder, backuped_paths, overwrite_existing_files))
+
+    // 复制文件
+    if (!copy_files(input_folder, target_folder, backuped_paths,
+                   overwrite_existing_files))
         return 1;
+
     return 0;
 }

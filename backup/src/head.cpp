@@ -1,3 +1,6 @@
+/// @file backup/src/head.cpp
+/// @brief 实现 head.hpp 的功能
+//
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
@@ -19,48 +22,51 @@
 using nlohmann::json;
 
 /// 尝试创建目录。如果目录不存在且无法创建，则返回false并记录错误信息。
-static bool _try_create_directory(fs::path name) {
+static bool try_create_directory(fs::path name) {
     try {
         if (!std::filesystem::exists(name) ||
             !std::filesystem::is_directory(name))
             std::filesystem::create_directories(name);
     } catch (const std::exception &e) {
-        print::log(print::ERROR, (string) "[ERROR]" + e.what());
+        print::log(print::ERROR, (std::string) "[ERROR]" + e.what());
         return false;
     }
     return true;
 }
-bool create_backup_folder(std::ofstream &ofs_directories,
-                          std::ofstream &ofs_file_info) {
-    using std::format;
-    if (!_try_create_directory(config::PATH_BACKUP_COPIES))
-        return false;
-    if (!_try_create_directory(config::PATH_BACKUP_DATA / env::CALLED_TIME))
-        return false;
-    ofs_directories.open(config::PATH_BACKUP_DATA / env::CALLED_TIME /
-                         "directories.json");
-    ofs_file_info.open(config::PATH_BACKUP_DATA / env::CALLED_TIME /
-                       "file_info.json");
 
-    if (!ofs_directories.is_open() || !ofs_file_info.is_open()) {
+bool create_backup_folder(std::ofstream &directories_output_stream,
+                          std::ofstream &file_info_output_stream) {
+    using std::format;
+    if (!try_create_directory(config::PATH_BACKUP_COPIES))
+        return false;
+    if (!try_create_directory(config::PATH_BACKUP_DATA / env::CALLED_TIME))
+        return false;
+    directories_output_stream.open(config::PATH_BACKUP_DATA / env::CALLED_TIME /
+                                   "directories.json");
+    file_info_output_stream.open(config::PATH_BACKUP_DATA / env::CALLED_TIME /
+                                 "file_info.json");
+
+    if (!directories_output_stream.is_open() ||
+        !file_info_output_stream.is_open()) {
         print::log(print::ERROR, "[ERROR] Cannot open files.");
         return false;
     }
     return true;
 }
 
-bool parseCommandLineArgs(int argc, char *argv[], int &threads,
-                          std::vector<std::string> &folders) {
+bool parse_command_line_args(int argc, char *argv[], int &threads,
+                             std::vector<std::string> &folders) {
     namespace po = boost::program_options;
 
     // 定义命令行选项
+    // clang-format off
     po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "Display this help message")(
-        "threads,j", po::value<int>()->default_value(1),
-        "Number of threads to use")("folders,f",
-                                    po::value<std::vector<std::string>>(),
-                                    "Folders to backup")(
-        "check-cached-md5,c", "Use cached MD5 information for verification");
+    desc.add_options()
+        ("help,h", "Display this help message")
+        ("threads,j", po::value<int>()->default_value(1), "Number of threads to use")
+        ("folders,f", po::value<std::vector<std::string>>(), "Folders to backup")
+        ("check-cached-md5,c", "Use cached MD5 information for verification");
+    // clang-format on
 
     // 解析命令行参数
     po::variables_map vm;
@@ -74,9 +80,9 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
         }
 
         if (vm.count("folders")) {
-            const auto &folderPaths =
+            const auto &folder_paths =
                 vm["folders"].as<std::vector<std::string>>();
-            for (const auto &path : folderPaths) {
+            for (const auto &path : folder_paths) {
                 folders.push_back(path);
             }
         }
@@ -99,7 +105,7 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
     using namespace print;
     cprintln(INFO,
              "More source paths (\"" + config::INPUT_END_FLAG + "\" to end):");
-    string path;
+    std::string path;
     while (std::getline(std::cin, path) && path != config::INPUT_END_FLAG) {
         if (!path.empty())
             folders.push_back(path);
@@ -112,36 +118,45 @@ bool parseCommandLineArgs(int argc, char *argv[], int &threads,
     return true;
 }
 
-void search_directories_and_files(const vector<u8string> &backup_folder_paths,
-                                  vector<u8string> &directories,
-                                  vector<u8string> &files) {
+void search_directories_and_files(
+    const std::vector<u8string> &backup_folder_paths,
+    std::vector<u8string> &directories, std::vector<u8string> &files) {
     print::cprintln(print::INFO, "Searching directories and files...");
-    std::unordered_set<fs::path> d, f;
 
-    // BFS
-    std::queue<fs::path> q;
+    // Sets to store discovered directories and files.
+    std::unordered_set<fs::path> discovered_directories;
+    std::unordered_set<fs::path> discovered_files;
+
+    // Queue for breadth-first search traversal.
+    std::queue<fs::path> traversal_queue;
+
+    // Enqueue initial backup folder paths if they exist.
     for (auto path : backup_folder_paths) {
         if (!fs::exists(path)) {
-            print::log(print::WARN,
-                       format("[WARN] doesn't exist: {}",
-                              strencode::to_console_format(path)));
+            print::log(print::WARN, format("[WARN] doesn't exist: {}",
+                                           strencode::to_console_format(path)));
         } else {
-            fs::path abs_path = fs::canonical(path);
-            if (!d.contains(abs_path)) {
-                print::log(print::IMPORTANT, "[INFO] Folder path: " +
-                                                 strencode::to_console_format(
-                                                     abs_path.u8string()));
-                d.insert(abs_path);
-                q.push(abs_path);
+            fs::path canonical_path = fs::canonical(path);
+            if (!discovered_directories.contains(canonical_path)) {
+                print::log(print::IMPORTANT,
+                           "[INFO] Folder path: " +
+                               strencode::to_console_format(
+                                   canonical_path.u8string()));
+                discovered_directories.insert(canonical_path);
+                traversal_queue.push(canonical_path);
             }
         }
     }
-    while (!q.empty()) {
-        auto path = q.front();
-        q.pop();
+
+    // Perform breadth-first search to discover directories and files.
+    while (!traversal_queue.empty()) {
+        fs::path current_path = traversal_queue.front();
+        traversal_queue.pop();
+
         try {
-            for (const auto &entry : fs::directory_iterator(path)) {
-                if (entry.path() == path || entry.path() == path.parent_path())
+            for (const auto &entry : fs::directory_iterator(current_path)) {
+                if (entry.path() == current_path ||
+                    entry.path() == current_path.parent_path())
                     continue;
                 if (config::IGNORED_PATH.contains(
                         entry.path().filename().u8string())) {
@@ -151,31 +166,36 @@ void search_directories_and_files(const vector<u8string> &backup_folder_paths,
                     continue;
                 }
                 if (fs::is_regular_file(entry))
-                    f.insert(entry.path().u8string());
+                    discovered_files.insert(entry.path().u8string());
                 if (fs::is_directory(entry) &&
-                    !d.contains(entry.path().u8string()))
-                    d.insert(entry.path().u8string()), q.push(entry.path());
+                    !discovered_directories.contains(entry.path())) {
+                    discovered_directories.insert(entry.path().u8string());
+                    traversal_queue.push(entry.path());
+                }
             }
         } catch (const fs::filesystem_error &e) {
-            print::log(print::ERROR, (string) "[ERROR] " + e.what());
+            print::log(print::ERROR, std::string("[ERROR] ") + e.what());
         }
     }
 
+    // Transfer discovered directories and files to the output vectors.
     directories.clear();
     files.clear();
-    directories.reserve(d.size());
-    files.reserve(f.size());
-    for (const auto &path : d)
+    directories.reserve(discovered_directories.size());
+    files.reserve(discovered_files.size());
+    for (const auto &path : discovered_directories)
         directories.emplace_back(path.u8string());
-    for (const auto &path : f)
+    for (const auto &path : discovered_files)
         files.emplace_back(path.u8string());
-    print::cprintln(
-        print::SUCCESS,
-        format("  Found {} directories and {} files", d.size(), f.size()));
+
+    print::cprintln(print::SUCCESS,
+                    format("  Found {} directories and {} files",
+                           discovered_directories.size(),
+                           discovered_files.size()));
 }
 
-void get_file_infos(const vector<u8string> &files,
-                    vector<fileinfo::FileInfo> &file_infos) {
+void get_file_infos(const std::vector<u8string> &files,
+                    std::vector<fileinfo::FileInfo> &file_infos) {
     print::cprintln(print::INFO, "Getting file infos...");
     file_infos.clear();
     file_infos.reserve(files.size());
@@ -186,11 +206,10 @@ void get_file_infos(const vector<u8string> &files,
 }
 
 void calculate_md5_values(ThreadPool *&pool, FilesCopier *&copier,
-                          vector<fileinfo::FileInfo> &file_infos,
-                          const int THREAD_NUM) {
+                          std::vector<fileinfo::FileInfo> &file_infos) {
     using namespace print;
     cprintln(INFO, "Calculating md5 values...");
-    pool = new ThreadPool(THREAD_NUM);
+    pool = new ThreadPool(config::THREAD_NUM);
     copier = new FilesCopier(false);
     unsigned long long total_size = 0;
     for (const auto &file_info : file_infos)
@@ -203,9 +222,9 @@ void calculate_md5_values(ThreadPool *&pool, FilesCopier *&copier,
 
     print::cprintln(print::INFO,
                     std::format("  {}{}{} files, size: {}{:.2f}{} MB.",
-                                print::progress_bar::PROGRESS_COLOR1,
+                                print::progress_bar::DOUBLE_PROGRESS_COLOR1,
                                 file_infos.size(), print::INFO,
-                                print::progress_bar::PROGRESS_COLOR2,
+                                print::progress_bar::DOUBLE_PROGRESS_COLOR2,
                                 total_size / (1024.0 * 1024), print::INFO));
     file_size_progress_bar.show_bar(), file_number_progress_bar.show_bar();
 
@@ -230,16 +249,17 @@ void calculate_md5_values(ThreadPool *&pool, FilesCopier *&copier,
     cprintln(SUCCESS, "\n  Calculating md5 values done.");
 }
 
-void write_to_json(std::ofstream &ofs_file_info, std::ofstream &ofs_directories,
-                   const vector<u8string> &directories,
-                   const vector<fileinfo::FileInfo> &file_infos) {
+void write_to_json(std::ofstream &file_info_output_stream,
+                   std::ofstream &directories_output_stream,
+                   const std::vector<u8string> &directories,
+                   const std::vector<fileinfo::FileInfo> &file_infos) {
     print::cprintln(print::INFO, "Writing to json...");
-    ofs_directories << json(directories)
-                           .dump(config::JSON_DUMP_INDENT,
-                                 config::JSON_DUMP_INDENT_CHAR);
-    ofs_file_info << json(file_infos)
-                         .dump(config::JSON_DUMP_INDENT,
-                               config::JSON_DUMP_INDENT_CHAR);
+    directories_output_stream
+        << json(directories)
+               .dump(config::JSON_DUMP_INDENT, config::JSON_DUMP_INDENT_CHAR);
+    file_info_output_stream
+        << json(file_infos)
+               .dump(config::JSON_DUMP_INDENT, config::JSON_DUMP_INDENT_CHAR);
     print::cprintln(print::SUCCESS, "  Writing to json done.");
 }
 
@@ -251,7 +271,7 @@ void copy_files(FilesCopier *&copier) {
     print::cprintln(print::SUCCESS, "\n  Copying files done.");
 }
 
-void check(vector<fileinfo::FileInfo> &file_infos) {
+void check(const std::vector<fileinfo::FileInfo> &file_infos) {
     using namespace fs;
     print::cprintln(print::INFO, "Checking...");
     for (auto &file_info : file_infos) {
@@ -265,12 +285,12 @@ void check(vector<fileinfo::FileInfo> &file_infos) {
             (fileinfo::file_time_type2time_t(last_write_time(origin_path)) !=
              file_info.get_modified_time());
         if (ec) {
-            print::log(
-                print::ERROR,
-                std::format(
-                    "[ERROR] Check: File {} is different from backup, error "
-                    "code: {}",
-                    strencode::to_console_format(origin_path.u8string()), ec));
+            print::log(print::ERROR,
+                       std::format(
+                           "[ERROR] Check: File {} is different from backup,  "
+                           "error code: {}",
+                           strencode::to_console_format(origin_path.u8string()),
+                           ec));
             if (fs::exists(backup_path))
                 fs::remove(backup_path);
         }

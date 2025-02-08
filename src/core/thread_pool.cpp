@@ -1,14 +1,17 @@
+/// @file thread_pool.cpp
+/// @brief 线程池的实现。
+//
 // This file is part of BackupSystem - a C++ project.
-// 
-// Licensed under the MIT License. See LICENSE file in the root directory for details.
-
-#include "ThreadPool.hpp"
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for
+// details.
 
 #include <filesystem>
 #include <iostream>
 
 #include "print.hpp"
 #include "str_encode.hpp"
+#include "thread_pool.hpp"
 
 ThreadPool::ThreadPool(const int THREAD_NUM) : stop(false) {
     for (int i = 0; i < THREAD_NUM; ++i) {
@@ -17,7 +20,7 @@ ThreadPool::ThreadPool(const int THREAD_NUM) : stop(false) {
                 std::function<void()> task;
 
                 {
-                    std::unique_lock<std::mutex> lock(queueMutex);
+                    std::unique_lock<std::mutex> lock(queue_mutex);
                     condition.wait(lock,
                                    [this] { return stop || !tasks.empty(); });
 
@@ -40,7 +43,7 @@ ThreadPool::~ThreadPool() {
         return;
 
     {
-        std::unique_lock<std::mutex> lock(queueMutex);
+        std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
     }
     condition.notify_all();
@@ -58,7 +61,7 @@ FilesCopier::FilesCopier(const bool &overwrite_existing)
         while (true) {
             Task *task = nullptr;
             {
-                std::unique_lock<std::mutex> lock(queueMutex);
+                std::unique_lock<std::mutex> lock(queue_mutex);
                 condition.wait(lock, [this] { return stop || !tasks.empty(); });
                 if (stop && tasks.empty()) {
                     return;
@@ -76,7 +79,7 @@ FilesCopier::FilesCopier(const bool &overwrite_existing)
 }
 FilesCopier::~FilesCopier() {
     {
-        std::unique_lock<std::mutex> lock(queueMutex);
+        std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
     }
     condition.notify_all();
@@ -85,7 +88,7 @@ FilesCopier::~FilesCopier() {
 }
 void FilesCopier::enqueue(fs::path from, fs::path to, ull file_size) {
     {
-        std::unique_lock<std::mutex> lock(queueMutex);
+        std::unique_lock<std::mutex> lock(queue_mutex);
         tasks.emplace(from, to, file_size);
         total_num++, total_size += file_size;
     }
@@ -103,19 +106,20 @@ void FilesCopier::copy_func(const Task &task) {
                 static_cast<double>(finished_num) / total_num,
                 static_cast<double>(finished_size) / total_size);
     } catch (const std::exception &e) {
-        print::log(print::ERROR,
-                        std::format("[ERROR] FilesCopier: {} to {}, : {}.",
-                                    strencode::to_console_format(task.from.u8string()),
-                                    strencode::to_console_format(task.to.u8string()),
-                                    e.what()));
+        print::log(
+            print::ERROR,
+            std::format("[ERROR] FilesCopier: {} to {}, : {}.",
+                        strencode::to_console_format(task.from.u8string()),
+                        strencode::to_console_format(task.to.u8string()),
+                        e.what()));
     }
 }
 void FilesCopier::show_progress_bar() {
     print::cprintln(print::INFO,
                     std::format("  Copying {}{}{} files, size: {}{:.2f}{} MB.",
-                                print::progress_bar::PROGRESS_COLOR1, total_num,
-                                print::INFO,
-                                print::progress_bar::PROGRESS_COLOR2,
+                                print::progress_bar::DOUBLE_PROGRESS_COLOR1,
+                                total_num, print::INFO,
+                                print::progress_bar::DOUBLE_PROGRESS_COLOR2,
                                 total_size / (1024.0 * 1024), print::INFO));
     if_show_progress_bar = true;
 }

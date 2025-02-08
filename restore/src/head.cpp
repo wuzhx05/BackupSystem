@@ -1,3 +1,6 @@
+/// @file restore/src/head.cpp
+/// @brief head.hpp的实现
+///
 // This file is part of BackupSystem - a C++ project.
 //
 // Licensed under the MIT License. See LICENSE file in the root directory for
@@ -7,71 +10,79 @@
 
 namespace po = boost::program_options;
 
-bool parseCommandLineArgs(int argc, char *argv[], std::string &inputFolder,
-                          std::string &outputFolder, bool &overwrite) {
-    // define command line options
-    po::options_description desc("Allowed options");
-    desc.add_options()("help,h", "Display this help message")(
-        "input-folder,i", po::value<std::string>(), "Input folder to process")(
-        "output-folder,o", po::value<std::string>(),
-        "Output folder for results")("overwrite",
-                                     "Overwrite existing files when restoring");
+bool parse_command_line_args(int argc, char *argv[], std::string &input_folder,
+                             std::string &target_folder,
+                             bool &overwrite_existing_files) {
+    // Define command line options
+    // clang-format off
+    po::options_description options_description("Allowed options");
+    options_description.add_options()
+        ("help,h", "Display this help message")
+        ("input-folder,i", po::value<std::string>(), "Input folder for backup data")
+        ("target-folder,t", po::value<std::string>(), "Target folder to store results")
+        ("overwrite,o", "Overwrite existing files when restoring");
+    // clang-format on
 
-    // parse command line arguments
-    po::variables_map vm;
+    // Parse command line arguments
+    po::variables_map variables_map;
     try {
-        po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
-        po::notify(vm);
+        po::store(po::command_line_parser(argc, argv)
+                      .options(options_description)
+                      .run(),
+                  variables_map);
+        po::notify(variables_map);
 
         // -h
-        if (vm.count("help")) {
-            std::cerr << desc << std::endl;
+        if (variables_map.count("help")) {
+            std::cerr << options_description << std::endl;
             return false;
         }
 
         // -i
-        if (vm.count("input-folder"))
-            inputFolder = vm["input-folder"].as<std::string>();
+        if (variables_map.count("input-folder"))
+            input_folder = variables_map["input-folder"].as<std::string>();
         else {
-            std::cerr << "[ERROR] Input folder is required" << std::endl;
-            return false;
+            input_folder = "";
         }
 
-        // -o
-        if (vm.count("output-folder"))
-            outputFolder = vm["output-folder"].as<std::string>();
+        // -t
+        if (variables_map.count("target-folder"))
+            target_folder = variables_map["target-folder"].as<std::string>();
         else {
-            std::cerr << "[ERROR] Output folder is required" << std::endl;
+            print::cprintln(print::ERROR, "[ERROR] Target folder is required");
             return false;
         }
 
         // --overwrite
-        overwrite = vm.count("overwrite");
+        overwrite_existing_files = variables_map.count("overwrite");
     } catch (const boost::program_options::required_option &e) {
-        std::cerr << "[ERROR] " << e.what() << std::endl;
+        print::cprintln(print::ERROR, (string) "[ERROR] " + e.what());
         return false;
     } catch (const po::error &e) {
-        std::cerr << "[ERROR] " << e.what() << std::endl;
+        print::cprintln(print::ERROR, (string) "[ERROR] " + e.what());
         return false;
     }
     return true;
 }
 
-/// @brief 提示用户在指定范围内选择一个选项。
-/// 
-/// 该函数会不断从标准输入读取输入，直到提供一个有效的整数（在该范围 [l, r] 内）。它处理无效的输入，通过打印错误信息并再次输入。
+/// @brief Prompts the user to select an option within a specified range.
 ///
-/// @param l 范围的下限（包含）。
-/// @param r 范围的上限（包含）。
-/// 
-/// @return 用户选择的一个整数值，该值在指定的范围内。
-static int choose_an_option(int l, int r) {
+/// This function repeatedly reads input from standard input until a valid
+/// integer (within the range [l, r]) is provided. It handles invalid input by
+/// printing an error message and prompting again.
+///
+/// @param lower_bound The lower bound of the range (inclusive).
+/// @param upper_bound The upper bound of the range (inclusive).
+///
+/// @return An integer value selected by the user, which is within the specified
+/// range.
+static int choose_option_in_range(int lower_bound, int upper_bound) {
     int choice;
-    string input;
+    std::string input;
     while (std::getline(std::cin, input)) {
         try {
             choice = std::stoi(input);
-            if (choice >= l && choice <= r)
+            if (choice >= lower_bound && choice <= upper_bound)
                 break;
             else
                 throw std::invalid_argument("");
@@ -81,71 +92,91 @@ static int choose_an_option(int l, int r) {
     }
     return choice;
 }
-bool selectBackupFolder(fs::path &input_folder, fs::path &output_folder) {
-    // ambiguious input_folder
-    if (!fs::exists(config::PATH_BACKUP_DATA / input_folder)) {
-        // search candidates and sort
-        vector<std::pair<double, fs::path>> candidates;
-        for (auto entry : fs::directory_iterator(config::PATH_BACKUP_DATA)) {
+
+bool select_backup_folder(fs::path &input_folder, fs::path &target_folder) {
+    // Ambiguous input_folder
+    if (!fs::exists(config::PATH_BACKUP_DATA / input_folder) ||
+        input_folder == "." || input_folder == ".." || input_folder.empty()) {
+        // Search candidates and sort
+        std::vector<std::pair<double, fs::path>> candidates;
+        for (const auto &entry :
+             fs::directory_iterator(config::PATH_BACKUP_DATA)) {
             if (entry.is_directory()) {
                 auto u8_input_folder = input_folder.u8string();
                 auto u8_candidate = entry.path().filename().u8string();
                 candidates.push_back(
                     {strsimilarity::levenshteinFullMatrix(
-                         string(u8_input_folder.begin(), u8_input_folder.end()),
-                         string(u8_candidate.begin(), u8_candidate.end())),
+                         std::string(u8_input_folder.begin(),
+                                     u8_input_folder.end()),
+                         std::string(u8_candidate.begin(), u8_candidate.end())),
                      entry.path()});
             }
+        }
+        if (candidates.size() == 0) {
+            print::cprintln(print::ERROR, "[ERROR] No backup data detected!");
+            return false;
         }
         std::stable_sort(candidates.begin(), candidates.end(),
                          std::greater<>());
 
-        // choose a candidate
-        double maxVal = candidates[0].first;
-        auto colored_percentage = [&](double s) -> string {
-            unsigned char deg =
-                maxVal ? static_cast<unsigned char>(255 * s / maxVal) : 0;
-            return std::format("\033[38;2;{};{};{}m{:5.1f}%{}", deg, deg, deg,
-                               s * 100, print::RESET);
+        // Choose a candidate
+        double max_similarity_score = candidates[0].first;
+        auto colored_percentage = [&](double score) -> std::string {
+            unsigned char degree = max_similarity_score
+                                       ? static_cast<unsigned char>(
+                                             255 * score / max_similarity_score)
+                                       : 0;
+            return std::format("\033[38;2;{};{};{}m{:5.1f}%{}", degree, degree,
+                               degree, score * 100, print::RESET);
         };
+
         print::cprintln(print::IMPORTANT, "Please input the backup path: ");
-        for (size_t i = 0; i < std::min((size_t)5, candidates.size()); i++) {
-            auto &[s, p] = candidates[i];
-            auto str = strencode::to_console_format(p.u8string());
-            print::println(
-                format("  [{}] {} {}", i + 1, colored_percentage(s), str));
+        for (size_t i = 0;
+             i < std::min(static_cast<size_t>(5), candidates.size()); i++) {
+            auto &[similarity, path] = candidates[i];
+            auto formatted_path = strencode::to_console_format(path.u8string());
+            print::println(format("  [{}] {} {}", i + 1,
+                                  colored_percentage(similarity),
+                                  formatted_path));
         }
+
         if (candidates.size() > 5)
             print::println("  [6] More...");
-        int opt = choose_an_option(1, std::min(6, (int)candidates.size()));
 
-        // option: more...
-        if (opt == 6 && candidates.size() > 5) {
+        int option = choose_option_in_range(
+            1, std::min(6, static_cast<int>(candidates.size())));
+
+        // Option: More...
+        if (option == 6 && candidates.size() > 5) {
             print::cprintln(print::IMPORTANT, "Please input the backup path: ");
             for (size_t i = 0; i < candidates.size(); i++) {
-                auto &[s, p] = candidates[i];
-                auto str = strencode::to_console_format(p.u8string());
+                auto &[similarity, path] = candidates[i];
+                auto formatted_path =
+                    strencode::to_console_format(path.u8string());
                 print::println(
                     format("  [{:>{}}] {} {}", i + 1,
-                           (int)std::log10((double)candidates.size()) + 1,
-                           colored_percentage(s), str));
+                           static_cast<int>(std::log10(
+                               static_cast<double>(candidates.size()))) +
+                               1,
+                           colored_percentage(similarity), formatted_path));
             }
-            opt = choose_an_option(1, (int)candidates.size());
-            input_folder = candidates[opt - 1].second;
+            option =
+                choose_option_in_range(1, static_cast<int>(candidates.size()));
+            input_folder = candidates[option - 1].second;
         } else {
-            input_folder = candidates[opt - 1].second;
+            input_folder = candidates[option - 1].second;
         }
     }
 
-    // to absolute path
+    // Convert to absolute path
     input_folder = fs::canonical(input_folder);
-    output_folder = fs::canonical(output_folder);
+    target_folder = fs::canonical(target_folder);
     return true;
 }
 
-bool parseBackupLog(const fs::path &input_folder,
-                    std::vector<fs::path> &backuped_paths) {
-    // read the file
+bool parse_backup_log(const fs::path &input_folder,
+                      std::vector<fs::path> &backuped_paths) {
+    // Read the file
     print::cprintln(print::INFO, "[INFO] Parsing backup log...");
     std::ifstream file(input_folder / "log.txt");
     if (!file.is_open()) {
@@ -153,21 +184,22 @@ bool parseBackupLog(const fs::path &input_folder,
     }
 
     std::string line;
-    const string prefix = "[INFO] Folder path: ";
+    const std::string log_prefix = "[INFO] Folder path: ";
 
-    // skip other information
+    // Skip other information
     while (std::getline(file, line)) {
         print::println("[LOG]" + line);
-        if (line.substr(0, prefix.size()) == prefix) {
+        if (line.substr(0, log_prefix.size()) == log_prefix) {
             break;
         }
     }
 
-    // parse: "[INFO] Folder path: xxx"
-    while (line.substr(0, prefix.size()) == prefix) {
-        backuped_paths.push_back(fs::canonical(line.substr(prefix.size())));
+    // Parse: "[INFO] Folder path: xxx"
+    while (line.substr(0, log_prefix.size()) == log_prefix) {
+        backuped_paths.push_back(fs::canonical(
+            strencode::to_u8string(line.substr(log_prefix.size()))));
         std::getline(file, line);
-        if (line.substr(0, prefix.size()) == prefix) {
+        if (line.substr(0, log_prefix.size()) == log_prefix) {
             print::println("[LOG]" + line);
         } else {
             break;
@@ -181,40 +213,44 @@ bool parseBackupLog(const fs::path &input_folder,
     return true;
 }
 
-// to-do: test& optimize
-bool path_contain(const fs::path &base, const fs::path &child) {
-    assert(base.is_absolute());
-    assert(child.is_absolute());
-    return child.string().starts_with(base.string());
+// TODO: Test & optimize
+bool is_path_contained(const fs::path &base_path, const fs::path &child_path) {
+    assert(base_path.is_absolute());
+    assert(child_path.is_absolute());
+    return child_path.string().starts_with(base_path.string());
 }
+
 bool create_directories(const fs::path &input_folder,
-                        const fs::path &output_folder,
+                        const fs::path &target_folder,
                         const std::vector<fs::path> &backuped_paths) {
     print::cprintln(print::INFO, "[INFO] Creating directories...");
-    std::ifstream ifs_directory_info(input_folder / "directories.json");
-    if (!ifs_directory_info.is_open()) {
+    std::ifstream directory_info_file(input_folder / "directories.json");
+    if (!directory_info_file.is_open()) {
         print::cprintln(print::ERROR, "[ERROR] Failed to open the file.");
         return false;
     }
-    // parse
-    vector<u8string> directory_info;
-    nlohmann::json j;
-    ifs_directory_info >> j;
-    directory_info = j.get<vector<u8string>>();
-    ifs_directory_info.close();
+    // Parse
+    std::vector<std::u8string> directory_info;
+    nlohmann::json json_data;
+    directory_info_file >> json_data;
+    directory_info = json_data.get<std::vector<std::u8string>>();
+    directory_info_file.close();
 
-    // create
-    for (auto str : directory_info) {
-        auto p = fs::weakly_canonical(str);
-        for (auto bp : backuped_paths) {
-            if (path_contain(bp, p)) {
-                auto relative_path = fs::relative(p, bp.parent_path());
-                auto target_path = output_folder / relative_path;
+    // Create
+    for (const auto &dir : directory_info) {
+        auto canonical_path = fs::weakly_canonical(dir);
+        for (const auto &backup_path : backuped_paths) {
+            if (is_path_contained(backup_path, canonical_path)) {
+                auto relative_path =
+                    fs::relative(canonical_path, backup_path.parent_path());
+                auto target_path = target_folder / relative_path;
                 if (!fs::exists(target_path)) {
                     fs::create_directories(target_path);
                 } else {
                     print::log(print::RESET,
-                               "[INFO] Directory already exists: " + p.string(),
+                               "[INFO] Directory already exists: " +
+                                   strencode::to_console_format(
+                                       canonical_path.u8string()),
                                false);
                 }
             }
@@ -224,44 +260,48 @@ bool create_directories(const fs::path &input_folder,
     return true;
 }
 
-bool copy_files(const fs::path &input_folder, const fs::path &output_folder,
+bool copy_files(const fs::path &input_folder, const fs::path &target_folder,
                 const std::vector<fs::path> &backuped_paths,
                 bool overwrite_existing_files) {
     print::cprintln(print::INFO, "[INFO] Copying files...");
-    std::ifstream ifs_file_info(input_folder / "file_info.json");
-    if (!ifs_file_info.is_open()) {
+    std::ifstream file_info_file(input_folder / "file_info.json");
+    if (!file_info_file.is_open()) {
         print::cprintln(print::ERROR, "[ERROR] Failed to open the file.");
         return false;
     }
-    // parse
-    vector<fileinfo::FileInfo> file_info;
-    nlohmann::json j;
-    ifs_file_info >> j;
-    file_info = j.get<vector<fileinfo::FileInfo>>();
-    ifs_file_info.close();
-    // copy
-    auto copier = new FilesCopier(overwrite_existing_files);
-    for (auto &fi : file_info) {
-        if (fi.get_md5_value() == "") {
-            print::log(print::ERROR, "[ERROR] FileInfo corrupted: " + nlohmann::json(fi).dump());
+    // Parse
+    std::vector<fileinfo::FileInfo> file_info;
+    nlohmann::json json_data;
+    file_info_file >> json_data;
+    file_info = json_data.get<std::vector<fileinfo::FileInfo>>();
+    file_info_file.close();
+
+    // Copy
+    auto file_copier = new FilesCopier(overwrite_existing_files);
+    for (const auto &file : file_info) {
+        if (file.get_md5_value().empty()) {
+            print::log(print::ERROR, "[ERROR] FileInfo corrupted: " +
+                                         nlohmann::json(file).dump());
             continue;
         }
-        if (!fs::exists(config::PATH_BACKUP_COPIES / fi.get_md5_value())) {
-            print::log(print::ERROR, "[ERROR] Backup lost: " + nlohmann::json(fi).dump());
+        if (!fs::exists(config::PATH_BACKUP_COPIES / file.get_md5_value())) {
+            print::log(print::ERROR,
+                       "[ERROR] Backup lost: " + nlohmann::json(file).dump());
             continue;
         }
-        for (auto &bp : backuped_paths) {
-            if (path_contain(bp, fi.get_path())) {
+        for (const auto &backup_path : backuped_paths) {
+            if (is_path_contained(backup_path, file.get_path())) {
                 auto relative_path =
-                    fs::relative(fi.get_path(), bp.parent_path());
-                auto target_path = output_folder / relative_path;
-                copier->enqueue(config::PATH_BACKUP_COPIES / fi.get_md5_value(),
-                                target_path, fi.get_file_size());
+                    fs::relative(file.get_path(), backup_path.parent_path());
+                auto target_path = target_folder / relative_path;
+                file_copier->enqueue(config::PATH_BACKUP_COPIES /
+                                         file.get_md5_value(),
+                                     target_path, file.get_file_size());
             }
         }
     }
-    copier->show_progress_bar();
-    delete copier;
+    file_copier->show_progress_bar();
+    delete file_copier;
     print::println("");
     print::cprintln(print::SUCCESS, "  Copying files done.");
     return true;
